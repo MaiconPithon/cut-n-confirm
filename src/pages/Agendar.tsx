@@ -150,7 +150,8 @@ export default function Agendar() {
 
   const whatsappMessage = () => {
     const dateStr = selectedDate ? format(selectedDate, "dd/MM/yyyy") : "";
-    const msg = `Olá! Agendei um horário na Barbearia do Fal:\n\n👤 Nome: ${clientName}\n✂️ Serviço: ${selectedService?.name}\n📅 Data: ${dateStr}\n🕐 Horário: ${selectedTime}\n💰 Pagamento: ${paymentMethod === "pix" ? "Pix" : "Dinheiro"}\n💵 Valor: R$ ${selectedService?.price.toFixed(2).replace(".", ",")}`;
+    const valor = `R$ ${selectedService?.price.toFixed(2).replace(".", ",")}`;
+    const msg = `✅ Agendamento Confirmado!\n\n📍 Barbearia Fal\n👤 Cliente: ${clientName}\n✂️ Serviço: ${selectedService?.name}\n📅 Data: ${dateStr} às ${selectedTime}\n💰 Valor: ${valor}\n\nPor favor, envie o comprovante do Pix para garantir sua vaga!`;
     return `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(msg)}`;
   };
 

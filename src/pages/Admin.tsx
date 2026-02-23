@@ -79,13 +79,23 @@ export default function Admin() {
     navigate("/admin-login");
   };
 
+  const todayStr = format(new Date(), "yyyy-MM-dd");
+  
   const todayTotal = appointments
-    ?.filter((a) => a.appointment_date === format(new Date(), "yyyy-MM-dd") && a.status !== "cancelado")
+    ?.filter((a) => a.appointment_date === todayStr && a.status !== "cancelado")
     .reduce((sum, a) => sum + Number(a.price), 0) || 0;
 
   const todayCount = appointments
-    ?.filter((a) => a.appointment_date === format(new Date(), "yyyy-MM-dd") && a.status !== "cancelado")
+    ?.filter((a) => a.appointment_date === todayStr && a.status !== "cancelado")
     .length || 0;
+
+  const monthTotal = appointments
+    ?.filter((a) => a.appointment_date.startsWith(format(new Date(), "yyyy-MM")) && a.status !== "cancelado")
+    .reduce((sum, a) => sum + Number(a.price), 0) || 0;
+
+  const totalGeral = appointments
+    ?.filter((a) => a.status !== "cancelado")
+    .reduce((sum, a) => sum + Number(a.price), 0) || 0;
 
   if (isAdmin === null) {
     return <div className="flex min-h-screen items-center justify-center bg-background text-muted-foreground">Verificando acesso...</div>;
@@ -104,7 +114,7 @@ export default function Admin() {
           </Button>
         </div>
 
-        <div className="mb-6 grid grid-cols-2 gap-4">
+        <div className="mb-6 grid grid-cols-2 gap-4 md:grid-cols-4">
           <Card className="border-border bg-card">
             <CardContent className="flex items-center gap-3 pt-6">
               <Calendar className="h-8 w-8 text-primary" />
@@ -120,6 +130,24 @@ export default function Admin() {
               <div>
                 <p className="text-2xl font-bold text-foreground">R$ {todayTotal.toFixed(2).replace(".", ",")}</p>
                 <p className="text-xs text-muted-foreground">Faturamento hoje</p>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="border-border bg-card">
+            <CardContent className="flex items-center gap-3 pt-6">
+              <DollarSign className="h-8 w-8 text-primary" />
+              <div>
+                <p className="text-2xl font-bold text-foreground">R$ {monthTotal.toFixed(2).replace(".", ",")}</p>
+                <p className="text-xs text-muted-foreground">Este mês</p>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="border-border bg-card">
+            <CardContent className="flex items-center gap-3 pt-6">
+              <DollarSign className="h-8 w-8 text-primary" />
+              <div>
+                <p className="text-2xl font-bold text-foreground">R$ {totalGeral.toFixed(2).replace(".", ",")}</p>
+                <p className="text-xs text-muted-foreground">Total geral</p>
               </div>
             </CardContent>
           </Card>

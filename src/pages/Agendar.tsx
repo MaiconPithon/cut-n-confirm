@@ -102,6 +102,11 @@ export default function Agendar() {
     onSuccess: () => {
       setStep("confirmed");
       toast.success("Agendamento realizado com sucesso!");
+      // Send WhatsApp notification to barber
+      const dateStr = selectedDate ? format(selectedDate, "dd/MM/yyyy") : "";
+      const valor = `R$ ${selectedService?.price.toFixed(2).replace(".", ",")}`;
+      const barberMsg = `🔔 *Novo Agendamento!*\n\n👤 Cliente: ${clientName}\n📱 Tel: ${clientPhone}\n✂️ Serviço: ${selectedService?.name}\n📅 Data: ${dateStr} às ${selectedTime}\n💰 Valor: ${valor}\n💳 Pagamento: ${paymentMethod === "pix" ? "Pix" : "Dinheiro"}`;
+      window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(barberMsg)}`, "_blank");
     },
     onError: () => {
       toast.error("Erro ao agendar. Tente novamente.");

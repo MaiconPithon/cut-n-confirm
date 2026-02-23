@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Home } from "lucide-react";
 
 type Mode = "login" | "forgot" | "magic";
 
@@ -114,6 +115,9 @@ export default function AdminLogin() {
       <Card className="w-full max-w-sm border-border bg-card">
         <CardHeader>
           <CardTitle className="text-center text-2xl text-primary">Área do Barbeiro</CardTitle>
+          <Button variant="ghost" size="sm" onClick={() => navigate("/")} className="mx-auto mt-2 gap-2 text-muted-foreground hover:text-primary">
+            <Home className="h-4 w-4" /> Página Inicial
+          </Button>
         </CardHeader>
         <CardContent>
           <Tabs value={mode} onValueChange={(v) => setMode(v as Mode)} className="w-full">

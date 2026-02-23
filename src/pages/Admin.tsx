@@ -12,7 +12,7 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { LogOut, Calendar, DollarSign, UserPlus } from "lucide-react";
+import { LogOut, Calendar, DollarSign, UserPlus, Home } from "lucide-react";
 import type { Tables } from "@/integrations/supabase/types";
 
 type Appointment = Tables<"appointments"> & { services: { name: string } | null };
@@ -146,9 +146,14 @@ export default function Admin() {
             <h1 className="text-3xl font-bold text-primary">Painel Admin</h1>
             <p className="text-sm text-muted-foreground">Barbearia do Fal</p>
           </div>
-          <Button variant="outline" onClick={handleLogout} className="gap-2">
-            <LogOut className="h-4 w-4" /> Sair
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => navigate("/")} className="gap-2">
+              <Home className="h-4 w-4" /> Página Inicial
+            </Button>
+            <Button variant="outline" onClick={handleLogout} className="gap-2">
+              <LogOut className="h-4 w-4" /> Sair
+            </Button>
+          </div>
         </div>
 
         <Tabs defaultValue="dashboard" className="w-full">

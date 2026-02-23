@@ -6,11 +6,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { LogOut, Calendar, DollarSign } from "lucide-react";
+import { LogOut, Calendar, DollarSign, UserPlus } from "lucide-react";
 import type { Tables } from "@/integrations/supabase/types";
 
 type Appointment = Tables<"appointments"> & { services: { name: string } | null };
@@ -26,6 +28,9 @@ export default function Admin() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
+  const [newEmail, setNewEmail] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [creatingUser, setCreatingUser] = useState(false);
 
   useEffect(() => {
     const checkAdmin = async () => {
@@ -79,6 +84,38 @@ export default function Admin() {
     navigate("/admin-login");
   };
 
+  const handleCreateUser = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newEmail || !newPassword || newPassword.length < 6) {
+      toast.error("Email e senha (mín. 6 caracteres) são obrigatórios.");
+      return;
+    }
+    setCreatingUser(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-admin-user`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session?.access_token}`,
+            apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          },
+          body: JSON.stringify({ email: newEmail, password: newPassword }),
+        }
+      );
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.error);
+      toast.success(result.message);
+      setNewEmail("");
+      setNewPassword("");
+    } catch (err: any) {
+      toast.error(err.message || "Erro ao criar usuário");
+    }
+    setCreatingUser(false);
+  };
+
   const todayStr = format(new Date(), "yyyy-MM-dd");
   
   const todayTotal = appointments
@@ -114,103 +151,154 @@ export default function Admin() {
           </Button>
         </div>
 
-        <div className="mb-6 grid grid-cols-2 gap-4 md:grid-cols-4">
-          <Card className="border-border bg-card">
-            <CardContent className="flex items-center gap-3 pt-6">
-              <Calendar className="h-8 w-8 text-primary" />
-              <div>
-                <p className="text-2xl font-bold text-foreground">{todayCount}</p>
-                <p className="text-xs text-muted-foreground">Agendamentos hoje</p>
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="border-border bg-card">
-            <CardContent className="flex items-center gap-3 pt-6">
-              <DollarSign className="h-8 w-8 text-primary" />
-              <div>
-                <p className="text-2xl font-bold text-foreground">R$ {todayTotal.toFixed(2).replace(".", ",")}</p>
-                <p className="text-xs text-muted-foreground">Faturamento hoje</p>
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="border-border bg-card">
-            <CardContent className="flex items-center gap-3 pt-6">
-              <DollarSign className="h-8 w-8 text-primary" />
-              <div>
-                <p className="text-2xl font-bold text-foreground">R$ {monthTotal.toFixed(2).replace(".", ",")}</p>
-                <p className="text-xs text-muted-foreground">Este mês</p>
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="border-border bg-card">
-            <CardContent className="flex items-center gap-3 pt-6">
-              <DollarSign className="h-8 w-8 text-primary" />
-              <div>
-                <p className="text-2xl font-bold text-foreground">R$ {totalGeral.toFixed(2).replace(".", ",")}</p>
-                <p className="text-xs text-muted-foreground">Total geral</p>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+        <Tabs defaultValue="dashboard" className="w-full">
+          <TabsList className="mb-6 grid w-full grid-cols-2">
+            <TabsTrigger value="dashboard">Agendamentos</TabsTrigger>
+            <TabsTrigger value="team">Gerenciar Equipe</TabsTrigger>
+          </TabsList>
 
-        <Card className="border-border bg-card">
-          <CardHeader>
-            <CardTitle className="text-primary">Agendamentos</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {isLoading ? (
-              <p className="text-muted-foreground">Carregando...</p>
-            ) : (
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow className="border-border">
-                      <TableHead className="text-primary">Data</TableHead>
-                      <TableHead className="text-primary">Hora</TableHead>
-                      <TableHead className="text-primary">Cliente</TableHead>
-                      <TableHead className="text-primary">Telefone</TableHead>
-                      <TableHead className="text-primary">Serviço</TableHead>
-                      <TableHead className="text-primary">Valor</TableHead>
-                      <TableHead className="text-primary">Pgto</TableHead>
-                      <TableHead className="text-primary">Status</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {appointments?.map((a) => (
-                      <TableRow key={a.id} className="border-border">
-                        <TableCell className="text-foreground">{format(new Date(a.appointment_date + "T12:00:00"), "dd/MM")}</TableCell>
-                        <TableCell className="text-foreground">{a.appointment_time.slice(0, 5)}</TableCell>
-                        <TableCell className="text-foreground">{a.client_name}</TableCell>
-                        <TableCell className="text-foreground">{a.client_phone}</TableCell>
-                        <TableCell className="text-foreground">{a.services?.name}</TableCell>
-                        <TableCell className="text-primary font-semibold">R$ {Number(a.price).toFixed(2).replace(".", ",")}</TableCell>
-                        <TableCell className="text-foreground capitalize">{a.payment_method}</TableCell>
-                        <TableCell>
-                          <Select
-                            value={a.status}
-                            onValueChange={(v) => updateStatus.mutate({ id: a.id, status: v })}
-                          >
-                            <SelectTrigger className="w-32 border-border">
-                              <SelectValue>
-                                <Badge className={statusColors[a.status] || ""}>{a.status}</Badge>
-                              </SelectValue>
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="pendente">Pendente</SelectItem>
-                              <SelectItem value="confirmado">Confirmado</SelectItem>
-                              <SelectItem value="finalizado">Finalizado</SelectItem>
-                              <SelectItem value="cancelado">Cancelado</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+          <TabsContent value="dashboard">
+            <div className="mb-6 grid grid-cols-2 gap-4 md:grid-cols-4">
+              <Card className="border-border bg-card">
+                <CardContent className="flex items-center gap-3 pt-6">
+                  <Calendar className="h-8 w-8 text-primary" />
+                  <div>
+                    <p className="text-2xl font-bold text-foreground">{todayCount}</p>
+                    <p className="text-xs text-muted-foreground">Agendamentos hoje</p>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card className="border-border bg-card">
+                <CardContent className="flex items-center gap-3 pt-6">
+                  <DollarSign className="h-8 w-8 text-primary" />
+                  <div>
+                    <p className="text-2xl font-bold text-foreground">R$ {todayTotal.toFixed(2).replace(".", ",")}</p>
+                    <p className="text-xs text-muted-foreground">Faturamento hoje</p>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card className="border-border bg-card">
+                <CardContent className="flex items-center gap-3 pt-6">
+                  <DollarSign className="h-8 w-8 text-primary" />
+                  <div>
+                    <p className="text-2xl font-bold text-foreground">R$ {monthTotal.toFixed(2).replace(".", ",")}</p>
+                    <p className="text-xs text-muted-foreground">Este mês</p>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card className="border-border bg-card">
+                <CardContent className="flex items-center gap-3 pt-6">
+                  <DollarSign className="h-8 w-8 text-primary" />
+                  <div>
+                    <p className="text-2xl font-bold text-foreground">R$ {totalGeral.toFixed(2).replace(".", ",")}</p>
+                    <p className="text-xs text-muted-foreground">Total geral</p>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            <Card className="border-border bg-card">
+              <CardHeader>
+                <CardTitle className="text-primary">Agendamentos</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {isLoading ? (
+                  <p className="text-muted-foreground">Carregando...</p>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow className="border-border">
+                          <TableHead className="text-primary">Data</TableHead>
+                          <TableHead className="text-primary">Hora</TableHead>
+                          <TableHead className="text-primary">Cliente</TableHead>
+                          <TableHead className="text-primary">Telefone</TableHead>
+                          <TableHead className="text-primary">Serviço</TableHead>
+                          <TableHead className="text-primary">Valor</TableHead>
+                          <TableHead className="text-primary">Pgto</TableHead>
+                          <TableHead className="text-primary">Status</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {appointments?.map((a) => (
+                          <TableRow key={a.id} className="border-border">
+                            <TableCell className="text-foreground">{format(new Date(a.appointment_date + "T12:00:00"), "dd/MM")}</TableCell>
+                            <TableCell className="text-foreground">{a.appointment_time.slice(0, 5)}</TableCell>
+                            <TableCell className="text-foreground">{a.client_name}</TableCell>
+                            <TableCell className="text-foreground">{a.client_phone}</TableCell>
+                            <TableCell className="text-foreground">{a.services?.name}</TableCell>
+                            <TableCell className="text-primary font-semibold">R$ {Number(a.price).toFixed(2).replace(".", ",")}</TableCell>
+                            <TableCell className="text-foreground capitalize">{a.payment_method}</TableCell>
+                            <TableCell>
+                              <Select
+                                value={a.status}
+                                onValueChange={(v) => updateStatus.mutate({ id: a.id, status: v })}
+                              >
+                                <SelectTrigger className="w-32 border-border">
+                                  <SelectValue>
+                                    <Badge className={statusColors[a.status] || ""}>{a.status}</Badge>
+                                  </SelectValue>
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="pendente">Pendente</SelectItem>
+                                  <SelectItem value="confirmado">Confirmado</SelectItem>
+                                  <SelectItem value="finalizado">Finalizado</SelectItem>
+                                  <SelectItem value="cancelado">Cancelado</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="team">
+            <Card className="border-border bg-card">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-primary">
+                  <UserPlus className="h-5 w-5" /> Cadastrar Barbeiro
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="mb-4 text-sm text-muted-foreground">
+                  Cadastre um novo barbeiro que terá acesso ao painel administrativo.
+                </p>
+                <form onSubmit={handleCreateUser} className="space-y-4 max-w-sm">
+                  <div>
+                    <label className="mb-1 block text-sm text-muted-foreground">Email do barbeiro</label>
+                    <Input
+                      type="email"
+                      value={newEmail}
+                      onChange={(e) => setNewEmail(e.target.value)}
+                      placeholder="barbeiro@email.com"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-sm text-muted-foreground">Senha provisória (mín. 6 caracteres)</label>
+                    <Input
+                      type="password"
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      placeholder="••••••"
+                      required
+                      minLength={6}
+                    />
+                  </div>
+                  <Button type="submit" disabled={creatingUser} className="gap-2">
+                    <UserPlus className="h-4 w-4" />
+                    {creatingUser ? "Criando..." : "Criar Conta de Barbeiro"}
+                  </Button>
+                </form>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </div>
     </main>
   );

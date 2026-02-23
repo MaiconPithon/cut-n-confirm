@@ -7,13 +7,13 @@ import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-type Mode = "login" | "signup" | "forgot" | "magic";
+type Mode = "login" | "forgot" | "magic";
 
 export default function AdminLogin() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [mode, setMode] = useState<Mode>("login");
+  const [mode, setMode] = useState<Exclude<Mode, "signup">>("login");
   const navigate = useNavigate();
 
   // Auto-redirect if already logged in as admin
@@ -77,36 +77,6 @@ export default function AdminLogin() {
     setLoading(false);
   };
 
-  const handleSignUp = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (password.length < 6) {
-      toast.error("A senha deve ter pelo menos 6 caracteres.");
-      return;
-    }
-    setLoading(true);
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: { emailRedirectTo: window.location.origin },
-    });
-    if (error) {
-      // If user already registered, try to login instead
-      if (error.message.includes("already registered") || error.message.includes("already been registered")) {
-        const { error: loginError } = await supabase.auth.signInWithPassword({ email, password });
-        if (loginError) {
-          toast.error("Usuário já cadastrado. Use a aba 'Entrar' para fazer login.");
-        } else {
-          await checkAdminAndNavigate();
-        }
-      } else {
-        toast.error(error.message);
-      }
-    } else {
-      toast.success("Verifique seu e-mail para confirmar o cadastro!");
-      setMode("login");
-    }
-    setLoading(false);
-  };
 
   const handleForgotPassword = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -147,9 +117,8 @@ export default function AdminLogin() {
         </CardHeader>
         <CardContent>
           <Tabs value={mode} onValueChange={(v) => setMode(v as Mode)} className="w-full">
-            <TabsList className="grid w-full grid-cols-2 mb-4">
+            <TabsList className="grid w-full grid-cols-1 mb-4">
               <TabsTrigger value="login">Entrar</TabsTrigger>
-              <TabsTrigger value="signup">Cadastrar</TabsTrigger>
             </TabsList>
 
             <TabsContent value="login">
@@ -176,24 +145,6 @@ export default function AdminLogin() {
               </form>
             </TabsContent>
 
-            <TabsContent value="signup">
-              <form onSubmit={handleSignUp} className="space-y-4">
-                <div>
-                  <label className="mb-1 block text-sm text-muted-foreground">Email</label>
-                  <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
-                </div>
-                <div>
-                  <label className="mb-1 block text-sm text-muted-foreground">Senha (mín. 6 caracteres)</label>
-                  <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6} />
-                </div>
-                <Button type="submit" className="w-full" disabled={loading}>
-                  {loading ? "Cadastrando..." : "Criar Conta"}
-                </Button>
-                <p className="text-xs text-center text-muted-foreground pt-1">
-                  Apenas usuários autorizados terão acesso ao painel admin.
-                </p>
-              </form>
-            </TabsContent>
 
             <TabsContent value="forgot">
               <form onSubmit={handleForgotPassword} className="space-y-4">

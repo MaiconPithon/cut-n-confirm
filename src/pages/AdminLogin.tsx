@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,6 +15,39 @@ export default function AdminLogin() {
   const [loading, setLoading] = useState(false);
   const [mode, setMode] = useState<Mode>("login");
   const navigate = useNavigate();
+
+  // Auto-redirect if already logged in as admin
+  useEffect(() => {
+    const checkSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        const { data: roles } = await supabase
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", session.user.id)
+          .eq("role", "admin");
+        if (roles && roles.length > 0) {
+          navigate("/admin");
+        }
+      }
+    };
+    checkSession();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === "SIGNED_IN" && session?.user) {
+        const { data: roles } = await supabase
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", session.user.id)
+          .eq("role", "admin");
+        if (roles && roles.length > 0) {
+          navigate("/admin");
+        }
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [navigate]);
 
   const checkAdminAndNavigate = async () => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -57,7 +90,17 @@ export default function AdminLogin() {
       options: { emailRedirectTo: window.location.origin },
     });
     if (error) {
-      toast.error(error.message);
+      // If user already registered, try to login instead
+      if (error.message.includes("already registered") || error.message.includes("already been registered")) {
+        const { error: loginError } = await supabase.auth.signInWithPassword({ email, password });
+        if (loginError) {
+          toast.error("Usuário já cadastrado. Use a aba 'Entrar' para fazer login.");
+        } else {
+          await checkAdminAndNavigate();
+        }
+      } else {
+        toast.error(error.message);
+      }
     } else {
       toast.success("Verifique seu e-mail para confirmar o cadastro!");
       setMode("login");

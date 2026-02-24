@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Calendar } from "@/components/ui/calendar";
 import { WhatsAppButton } from "@/components/WhatsAppButton";
+import { PixPayment } from "@/components/PixPayment";
 import { ArrowLeft, ChevronRight, Check, MessageCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -16,11 +17,21 @@ type Step = "service" | "date" | "time" | "info" | "payment" | "confirm" | "conf
 
 const STEPS: Step[] = ["service", "date", "time", "info", "payment", "confirm"];
 
-const TIME_SLOTS = Array.from({ length: 26 }, (_, i) => {
-  const h = Math.floor(i / 2) + 8;
-  const m = i % 2 === 0 ? "00" : "30";
-  return `${String(h).padStart(2, "0")}:${m}`;
-});
+// Generate time slots dynamically based on schedule config
+const generateTimeSlots = (openTime = "08:00", closeTime = "21:00") => {
+  const slots: string[] = [];
+  const [oh, om] = openTime.split(":").map(Number);
+  const [ch, cm] = closeTime.split(":").map(Number);
+  let mins = oh * 60 + om;
+  const endMins = ch * 60 + cm;
+  while (mins < endMins) {
+    const h = Math.floor(mins / 60);
+    const m = mins % 60;
+    slots.push(`${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`);
+    mins += 30; // base 30min grid
+  }
+  return slots;
+};
 
 const WHATSAPP_NUMBER = "5571988335001";
 
@@ -116,6 +127,11 @@ export default function Agendar() {
   const bookedTimes = new Set(appointments?.map((a) => a.appointment_time.slice(0, 5)) || []);
   const isFullDayBlocked = blockedSlots?.some((b) => b.full_day);
   const blockedTimes = new Set(blockedSlots?.filter((b) => b.blocked_time).map((b) => b.blocked_time!.slice(0, 5)) || []);
+
+  // Get schedule config for selected date
+  const selectedDow = selectedDate ? getDay(selectedDate) : undefined;
+  const dayConfig = scheduleConfig?.find((c) => c.day_of_week === selectedDow);
+  const timeSlots = generateTimeSlots(dayConfig?.open_time?.slice(0, 5), dayConfig?.close_time?.slice(0, 5));
 
   const disabledDays = (date: Date) => {
     if (isBefore(date, startOfDay(new Date()))) return true;
@@ -243,7 +259,7 @@ export default function Agendar() {
               <p className="text-center text-muted-foreground">Este dia está bloqueado.</p>
             ) : (
               <div className="grid grid-cols-3 gap-2">
-                {TIME_SLOTS.map((t) => {
+                {timeSlots.map((t) => {
                   const taken = bookedTimes.has(t) || blockedTimes.has(t);
                   return (
                     <button
@@ -322,19 +338,15 @@ export default function Agendar() {
               </button>
             </div>
 
-            {/* Pix info box */}
+            {/* Full PIX payment interface */}
             {paymentMethod === "pix" && (
-              <div className="mt-4 rounded-lg border border-primary/30 bg-card p-5 text-center">
-                <p className="text-sm text-muted-foreground">Chave Pix (Telefone):</p>
-                <p className="my-1 text-lg font-bold text-primary">71 98833-5001</p>
-                <p className="mb-3 text-sm text-muted-foreground">
-                  Valor: <span className="text-primary">R$ {selectedService?.price.toFixed(2).replace(".", ",")}</span>
-                </p>
-                <a href={whatsappComprovante()} target="_blank" rel="noopener noreferrer">
-                  <Button variant="outline" className="border-[hsl(142,70%,45%)] text-[hsl(142,70%,45%)] hover:bg-[hsl(142,70%,45%)]/10">
-                    Enviar Comprovante via WhatsApp
-                  </Button>
-                </a>
+              <div className="mt-6">
+                <PixPayment
+                  valor={`R$ ${selectedService?.price.toFixed(2).replace(".", ",")}`}
+                  onSendComprovante={() => {
+                    window.open(whatsappComprovante(), "_blank");
+                  }}
+                />
               </div>
             )}
           </div>

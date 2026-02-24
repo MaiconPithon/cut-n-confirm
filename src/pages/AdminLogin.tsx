@@ -26,7 +26,7 @@ export default function AdminLogin() {
           .from("user_roles")
           .select("role")
           .eq("user_id", session.user.id)
-          .eq("role", "admin");
+          .in("role", ["admin", "super_admin"]);
         if (roles && roles.length > 0) {
           navigate("/admin");
         }
@@ -40,7 +40,7 @@ export default function AdminLogin() {
           .from("user_roles")
           .select("role")
           .eq("user_id", session.user.id)
-          .eq("role", "admin");
+          .in("role", ["admin", "super_admin"]);
         if (roles && roles.length > 0) {
           navigate("/admin");
         }
@@ -57,7 +57,7 @@ export default function AdminLogin() {
       .from("user_roles")
       .select("role")
       .eq("user_id", user.id)
-      .eq("role", "admin");
+      .in("role", ["admin", "super_admin"]);
     if (roles && roles.length > 0) {
       navigate("/admin");
     } else {

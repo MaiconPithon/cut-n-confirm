@@ -116,6 +116,18 @@ export default function Admin() {
     },
   });
 
+  const deleteAppointment = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("appointments").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-appointments"] });
+      toast.success("Agendamento excluído!");
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
   const updateSchedule = useMutation({
     mutationFn: async ({ id, updates }: { id: string; updates: Record<string, any> }) => {
       const { error } = await supabase.from("schedule_config").update(updates).eq("id", id);
@@ -302,6 +314,7 @@ export default function Admin() {
                           <TableHead className="text-primary">Valor</TableHead>
                           <TableHead className="text-primary">Pgto</TableHead>
                           <TableHead className="text-primary">Status</TableHead>
+                          <TableHead className="text-primary w-12"></TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -328,6 +341,20 @@ export default function Admin() {
                                   <SelectItem value="cancelado">Cancelado</SelectItem>
                                 </SelectContent>
                               </Select>
+                            </TableCell>
+                            <TableCell>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => {
+                                  if (confirm("Excluir este agendamento?")) {
+                                    deleteAppointment.mutate(a.id);
+                                  }
+                                }}
+                                className="h-8 w-8 text-destructive hover:text-destructive"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
                             </TableCell>
                           </TableRow>
                         ))}

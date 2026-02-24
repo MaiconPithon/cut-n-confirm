@@ -118,7 +118,9 @@ export type Database = {
       services: {
         Row: {
           active: boolean
+          buffer_minutes: number
           created_at: string
+          duration_minutes: number
           id: string
           name: string
           price: number
@@ -126,7 +128,9 @@ export type Database = {
         }
         Insert: {
           active?: boolean
+          buffer_minutes?: number
           created_at?: string
+          duration_minutes?: number
           id?: string
           name: string
           price: number
@@ -134,7 +138,9 @@ export type Database = {
         }
         Update: {
           active?: boolean
+          buffer_minutes?: number
           created_at?: string
+          duration_minutes?: number
           id?: string
           name?: string
           price?: number

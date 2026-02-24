@@ -10,11 +10,14 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
 import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { LogOut, Calendar as CalendarIcon, DollarSign, UserPlus, Home, Settings, Clock, Ban, Trash2 } from "lucide-react";
+import { LogOut, Calendar as CalendarIcon, DollarSign, UserPlus, Home, Settings, Clock, Ban, Trash2, KeyRound, X, Shield } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { useBusinessName } from "@/hooks/useBusinessName";
 import type { Tables } from "@/integrations/supabase/types";
 
 type Appointment = Tables<"appointments"> & { services: { name: string } | null };
@@ -32,11 +35,17 @@ export default function Admin() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
   const [newEmail, setNewEmail] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [creatingUser, setCreatingUser] = useState(false);
   const [blockDate, setBlockDate] = useState<Date | undefined>();
   const [blockReason, setBlockReason] = useState("");
+  const [filterDate, setFilterDate] = useState<Date | undefined>();
+  const [editingPasswordId, setEditingPasswordId] = useState<string | null>(null);
+  const [newUserPassword, setNewUserPassword] = useState("");
+  const [businessNameInput, setBusinessNameInput] = useState("");
+  const { businessName } = useBusinessName();
 
   useEffect(() => {
     const checkAdmin = async () => {
@@ -45,17 +54,24 @@ export default function Admin() {
       const { data: roles } = await supabase
         .from("user_roles")
         .select("role")
-        .eq("user_id", user.id)
-        .eq("role", "admin");
+        .eq("user_id", user.id);
       if (!roles || roles.length === 0) {
         toast.error("Sem permissão de administrador.");
         navigate("/admin-login");
         return;
       }
+      const userRole = roles[0].role;
+      if (userRole === "super_admin") {
+        setIsSuperAdmin(true);
+      }
       setIsAdmin(true);
     };
     checkAdmin();
   }, [navigate]);
+
+  useEffect(() => {
+    if (businessName) setBusinessNameInput(businessName);
+  }, [businessName]);
 
   const { data: appointments, isLoading } = useQuery({
     queryKey: ["admin-appointments"],
@@ -102,6 +118,28 @@ export default function Admin() {
         .order("blocked_date");
       if (error) throw error;
       return data;
+    },
+  });
+
+  const { data: adminUsers, refetch: refetchAdminUsers } = useQuery({
+    queryKey: ["admin-users"],
+    enabled: isSuperAdmin,
+    queryFn: async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/manage-admin-user`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session?.access_token}`,
+            apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          },
+          body: JSON.stringify({ action: "list" }),
+        }
+      );
+      const result = await res.json();
+      return result.users || [];
     },
   });
 
@@ -211,11 +249,89 @@ export default function Admin() {
       toast.success(result.message);
       setNewEmail("");
       setNewPassword("");
+      refetchAdminUsers();
     } catch (err: any) {
       toast.error(err.message || "Erro ao criar usuário");
     }
     setCreatingUser(false);
   };
+
+  const handleUpdatePassword = async (userId: string) => {
+    if (!newUserPassword || newUserPassword.length < 6) {
+      toast.error("Senha mínima de 6 caracteres.");
+      return;
+    }
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/manage-admin-user`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session?.access_token}`,
+            apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          },
+          body: JSON.stringify({ action: "update_password", user_id: userId, password: newUserPassword }),
+        }
+      );
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.error);
+      toast.success("Senha atualizada!");
+      setEditingPasswordId(null);
+      setNewUserPassword("");
+    } catch (err: any) {
+      toast.error(err.message);
+    }
+  };
+
+  const handleDeleteUser = async (userId: string, email: string) => {
+    if (!confirm(`Excluir a conta de ${email}? Esta ação não pode ser desfeita.`)) return;
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/manage-admin-user`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session?.access_token}`,
+            apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          },
+          body: JSON.stringify({ action: "delete", user_id: userId }),
+        }
+      );
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.error);
+      toast.success("Usuário excluído!");
+      refetchAdminUsers();
+    } catch (err: any) {
+      toast.error(err.message);
+    }
+  };
+
+  const handleSaveBusinessName = async () => {
+    if (!businessNameInput.trim()) {
+      toast.error("Nome do estabelecimento não pode ser vazio.");
+      return;
+    }
+    try {
+      const { error } = await supabase
+        .from("business_settings" as any)
+        .update({ value: businessNameInput.trim() } as any)
+        .eq("key", "business_name");
+      if (error) throw error;
+      queryClient.invalidateQueries({ queryKey: ["business-name"] });
+      toast.success("Nome atualizado com sucesso!");
+    } catch (err: any) {
+      toast.error(err.message);
+    }
+  };
+
+  // Filtered appointments by date
+  const filteredAppointments = filterDate
+    ? appointments?.filter((a) => a.appointment_date === format(filterDate, "yyyy-MM-dd"))
+    : appointments;
 
   const todayStr = format(new Date(), "yyyy-MM-dd");
   const todayTotal = appointments?.filter((a) => a.appointment_date === todayStr && a.status !== "cancelado").reduce((sum, a) => sum + Number(a.price), 0) || 0;
@@ -227,13 +343,15 @@ export default function Admin() {
     return <div className="flex min-h-screen items-center justify-center bg-background text-muted-foreground">Verificando acesso...</div>;
   }
 
+  const tabCount = isSuperAdmin ? 5 : 4;
+
   return (
     <main className="min-h-screen bg-background p-4 md:p-8">
       <div className="mx-auto max-w-5xl">
         <div className="mb-6 flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold text-primary">Painel Admin</h1>
-            <p className="text-sm text-muted-foreground">Barbearia do Fal</p>
+            <p className="text-sm text-muted-foreground">{businessName}</p>
           </div>
           <div className="flex gap-2">
             <Button variant="outline" onClick={() => navigate("/")} className="gap-2">
@@ -246,11 +364,13 @@ export default function Admin() {
         </div>
 
         <Tabs defaultValue="dashboard" className="w-full">
-          <TabsList className="mb-6 grid w-full grid-cols-4">
+          <TabsList className={cn("mb-6 grid w-full", tabCount === 5 ? "grid-cols-5" : "grid-cols-4")}>
             <TabsTrigger value="dashboard">Agendamentos</TabsTrigger>
             <TabsTrigger value="schedule">Agenda</TabsTrigger>
             <TabsTrigger value="services">Serviços</TabsTrigger>
-            <TabsTrigger value="team">Equipe</TabsTrigger>
+            {isSuperAdmin && <TabsTrigger value="team">Equipe</TabsTrigger>}
+            {isSuperAdmin && <TabsTrigger value="settings">Configurações</TabsTrigger>}
+            {!isSuperAdmin && <TabsTrigger value="team" disabled>Equipe</TabsTrigger>}
           </TabsList>
 
           {/* ─── TAB: Dashboard ─── */}
@@ -296,11 +416,39 @@ export default function Admin() {
 
             <Card className="border-border bg-card">
               <CardHeader>
-                <CardTitle className="text-primary">Agendamentos</CardTitle>
+                <div className="flex items-center justify-between flex-wrap gap-3">
+                  <CardTitle className="text-primary">Agendamentos</CardTitle>
+                  <div className="flex items-center gap-2">
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button variant="outline" className={cn("gap-2", filterDate && "border-primary text-primary")}>
+                          <CalendarIcon className="h-4 w-4" />
+                          {filterDate ? format(filterDate, "dd/MM/yyyy") : "Filtrar por data"}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="end">
+                        <Calendar
+                          mode="single"
+                          selected={filterDate}
+                          onSelect={setFilterDate}
+                          locale={ptBR}
+                          className="pointer-events-auto"
+                        />
+                      </PopoverContent>
+                    </Popover>
+                    {filterDate && (
+                      <Button variant="ghost" size="sm" onClick={() => setFilterDate(undefined)} className="gap-1 text-muted-foreground">
+                        <X className="h-4 w-4" /> Limpar
+                      </Button>
+                    )}
+                  </div>
+                </div>
               </CardHeader>
               <CardContent>
                 {isLoading ? (
                   <p className="text-muted-foreground">Carregando...</p>
+                ) : filteredAppointments && filteredAppointments.length === 0 ? (
+                  <p className="text-muted-foreground text-center py-8">Nenhum agendamento {filterDate ? "nesta data" : "encontrado"}.</p>
                 ) : (
                   <div className="overflow-x-auto">
                     <Table>
@@ -318,7 +466,7 @@ export default function Admin() {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {appointments?.map((a) => (
+                        {filteredAppointments?.map((a) => (
                           <TableRow key={a.id} className="border-border">
                             <TableCell className="text-foreground">{format(new Date(a.appointment_date + "T12:00:00"), "dd/MM")}</TableCell>
                             <TableCell className="text-foreground">{a.appointment_time.slice(0, 5)}</TableCell>
@@ -369,7 +517,6 @@ export default function Admin() {
           {/* ─── TAB: Schedule ─── */}
           <TabsContent value="schedule">
             <div className="grid gap-6 md:grid-cols-2">
-              {/* Turnos por dia */}
               <Card className="border-border bg-card">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 text-primary">
@@ -413,7 +560,6 @@ export default function Admin() {
                 </CardContent>
               </Card>
 
-              {/* Bloquear datas */}
               <Card className="border-border bg-card">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 text-primary">
@@ -449,7 +595,6 @@ export default function Admin() {
                     </div>
                   )}
 
-                  {/* Blocked dates list */}
                   {blockedSlots && blockedSlots.length > 0 && (
                     <div className="mt-4 space-y-2">
                       <p className="text-sm font-medium text-foreground">Datas bloqueadas:</p>
@@ -551,35 +696,136 @@ export default function Admin() {
             </Card>
           </TabsContent>
 
-          {/* ─── TAB: Team ─── */}
+          {/* ─── TAB: Team (Super Admin only) ─── */}
           <TabsContent value="team">
-            <Card className="border-border bg-card">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-primary">
-                  <UserPlus className="h-5 w-5" /> Cadastrar Barbeiro
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="mb-4 text-sm text-muted-foreground">
-                  Cadastre um novo barbeiro que terá acesso ao painel administrativo.
-                </p>
-                <form onSubmit={handleCreateUser} className="space-y-4 max-w-sm">
-                  <div>
-                    <label className="mb-1 block text-sm text-muted-foreground">Email do barbeiro</label>
-                    <Input type="email" value={newEmail} onChange={(e) => setNewEmail(e.target.value)} placeholder="barbeiro@email.com" required />
-                  </div>
-                  <div>
-                    <label className="mb-1 block text-sm text-muted-foreground">Senha provisória (mín. 6 caracteres)</label>
-                    <Input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="••••••" required minLength={6} />
-                  </div>
-                  <Button type="submit" disabled={creatingUser} className="gap-2">
-                    <UserPlus className="h-4 w-4" />
-                    {creatingUser ? "Criando..." : "Criar Conta de Barbeiro"}
-                  </Button>
-                </form>
-              </CardContent>
-            </Card>
+            {!isSuperAdmin ? (
+              <Card className="border-border bg-card">
+                <CardContent className="py-12 text-center">
+                  <Shield className="h-12 w-12 mx-auto mb-3 text-muted-foreground" />
+                  <p className="text-muted-foreground">Apenas o Super Admin pode gerenciar a equipe.</p>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="space-y-6">
+                {/* Create user form */}
+                <Card className="border-border bg-card">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-primary">
+                      <UserPlus className="h-5 w-5" /> Cadastrar Barbeiro
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="mb-4 text-sm text-muted-foreground">
+                      Cadastre um novo barbeiro que terá acesso ao painel administrativo.
+                    </p>
+                    <form onSubmit={handleCreateUser} className="space-y-4 max-w-sm">
+                      <div>
+                        <label className="mb-1 block text-sm text-muted-foreground">Email do barbeiro</label>
+                        <Input type="email" value={newEmail} onChange={(e) => setNewEmail(e.target.value)} placeholder="barbeiro@email.com" required />
+                      </div>
+                      <div>
+                        <label className="mb-1 block text-sm text-muted-foreground">Senha provisória (mín. 6 caracteres)</label>
+                        <Input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="••••••" required minLength={6} />
+                      </div>
+                      <Button type="submit" disabled={creatingUser} className="gap-2">
+                        <UserPlus className="h-4 w-4" />
+                        {creatingUser ? "Criando..." : "Criar Conta de Barbeiro"}
+                      </Button>
+                    </form>
+                  </CardContent>
+                </Card>
+
+                {/* List admin users */}
+                <Card className="border-border bg-card">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-primary">
+                      <Settings className="h-5 w-5" /> Barbeiros Cadastrados
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {!adminUsers || adminUsers.length === 0 ? (
+                      <p className="text-muted-foreground text-sm">Nenhum barbeiro cadastrado ainda.</p>
+                    ) : (
+                      <div className="space-y-3">
+                        {adminUsers.map((u: any) => (
+                          <div key={u.id} className="flex flex-wrap items-center gap-3 rounded-lg border border-border bg-secondary p-4">
+                            <div className="flex-1 min-w-[150px]">
+                              <p className="font-medium text-foreground">{u.email}</p>
+                              <p className="text-xs text-muted-foreground">
+                                Criado em {format(new Date(u.created_at), "dd/MM/yyyy")}
+                              </p>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              {editingPasswordId === u.id ? (
+                                <div className="flex items-center gap-2">
+                                  <Input
+                                    type="password"
+                                    placeholder="Nova senha"
+                                    value={newUserPassword}
+                                    onChange={(e) => setNewUserPassword(e.target.value)}
+                                    className="w-36"
+                                    minLength={6}
+                                  />
+                                  <Button size="sm" onClick={() => handleUpdatePassword(u.id)}>Salvar</Button>
+                                  <Button size="sm" variant="ghost" onClick={() => { setEditingPasswordId(null); setNewUserPassword(""); }}>
+                                    <X className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              ) : (
+                                <Button variant="outline" size="sm" onClick={() => setEditingPasswordId(u.id)} className="gap-1">
+                                  <KeyRound className="h-3 w-3" /> Senha
+                                </Button>
+                              )}
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => handleDeleteUser(u.id, u.email)}
+                                className="h-8 w-8 text-destructive hover:text-destructive"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
+            )}
           </TabsContent>
+
+          {/* ─── TAB: Settings (Super Admin only) ─── */}
+          {isSuperAdmin && (
+            <TabsContent value="settings">
+              <Card className="border-border bg-card">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-primary">
+                    <Shield className="h-5 w-5" /> Configurações Globais
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="mb-4 text-sm text-muted-foreground">
+                    Altere o nome do estabelecimento. Ele será exibido em todo o site e no painel.
+                  </p>
+                  <div className="max-w-sm space-y-4">
+                    <div>
+                      <label className="mb-1 block text-sm font-medium text-foreground">Nome do Estabelecimento</label>
+                      <Input
+                        value={businessNameInput}
+                        onChange={(e) => setBusinessNameInput(e.target.value)}
+                        placeholder="Ex: Barbearia Premium"
+                      />
+                    </div>
+                    <Button onClick={handleSaveBusinessName} className="gap-2">
+                      <Settings className="h-4 w-4" />
+                      Salvar Nome
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          )}
         </Tabs>
       </div>
     </main>

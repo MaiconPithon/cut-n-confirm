@@ -91,6 +91,27 @@ export type Database = {
         }
         Relationships: []
       }
+      business_settings: {
+        Row: {
+          id: string
+          key: string
+          updated_at: string
+          value: string
+        }
+        Insert: {
+          id?: string
+          key: string
+          updated_at?: string
+          value: string
+        }
+        Update: {
+          id?: string
+          key?: string
+          updated_at?: string
+          value?: string
+        }
+        Relationships: []
+      }
       schedule_config: {
         Row: {
           close_time: string
@@ -180,7 +201,7 @@ export type Database = {
       }
     }
     Enums: {
-      app_role: "admin" | "user"
+      app_role: "admin" | "user" | "super_admin"
       appointment_status: "pendente" | "confirmado" | "finalizado" | "cancelado"
       payment_method: "pix" | "dinheiro"
     }
@@ -310,7 +331,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "user"],
+      app_role: ["admin", "user", "super_admin"],
       appointment_status: ["pendente", "confirmado", "finalizado", "cancelado"],
       payment_method: ["pix", "dinheiro"],
     },

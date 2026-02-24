@@ -3,9 +3,11 @@ import { WhatsAppButton } from "@/components/WhatsAppButton";
 import { Scissors, Clock, MapPin, Phone } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import logoFal from "@/assets/logo-fal.jpeg";
+import { useBusinessName } from "@/hooks/useBusinessName";
 
 const Index = () => {
   const navigate = useNavigate();
+  const { businessName } = useBusinessName();
 
   return (
     <main className="relative flex min-h-[100dvh] flex-col items-center justify-center overflow-hidden bg-background">
@@ -30,14 +32,16 @@ const Index = () => {
           <div className="absolute -inset-6 rounded-full border border-primary/10" />
           <img
             src={logoFal}
-            alt="FAL Cortes Logo"
+            alt={`${businessName} Logo`}
             className="h-32 w-32 rounded-full border-2 border-primary object-cover shadow-2xl shadow-primary/25 sm:h-40 sm:w-40"
           />
         </div>
 
         {/* Title */}
         <h1 className="mb-2 text-4xl font-bold uppercase tracking-widest text-foreground sm:text-5xl md:text-6xl">
-          Barbearia do <span className="text-primary">Fal</span>
+          {businessName.split(" ").map((word, i, arr) => 
+            i === arr.length - 1 ? <span key={i} className="text-primary">{word}</span> : <span key={i}>{word} </span>
+          )}
         </h1>
         <p className="mb-1 text-base tracking-[0.25em] uppercase text-muted-foreground sm:text-lg">
           Estilo & Atitude

@@ -232,7 +232,7 @@ export default function Agendar() {
         ))}
       </div>
 
-      <div className="px-4 pb-24">
+      <div className="relative z-10 px-4 pb-24">
         {/* Step: Service */}
         {step === "service" && (
           <div>

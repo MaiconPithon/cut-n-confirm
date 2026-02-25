@@ -13,21 +13,20 @@ const Index = () => {
   return (
     <main className="relative flex min-h-[100dvh] flex-col items-center justify-center overflow-hidden bg-background">
       {/* Premium background image */}
-      <div className="pointer-events-none absolute inset-0">
+      <div className="pointer-events-none fixed inset-0 z-0">
         <img
           src={siteBg}
           alt=""
           aria-hidden="true"
-          className="h-full w-full object-cover opacity-40"
+          className="h-full w-full object-cover opacity-30"
+          loading="eager"
         />
-        <div className="absolute inset-0 bg-background/70" />
+        <div className="absolute inset-0 bg-background/75" />
+        <div className="absolute inset-0 bg-gradient-to-b from-background/80 via-transparent to-background/80" />
       </div>
 
-      {/* Gradient overlays */}
-      <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-background/80 via-transparent to-background/80" />
-
       {/* Content */}
-      <div className="relative z-10 flex flex-col items-center px-6 text-center">
+      <div className="relative z-10 flex flex-col items-center px-6 text-center pointer-events-auto">
         {/* Sharp logo on top */}
         <div className="mb-8">
           <img

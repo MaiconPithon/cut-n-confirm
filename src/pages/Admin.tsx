@@ -525,36 +525,62 @@ export default function Admin() {
                 </CardHeader>
                 <CardContent className="space-y-3">
                   {scheduleConfig?.map((day) => (
-                    <div key={day.id} className="flex items-center gap-3 rounded-lg border border-border bg-secondary p-3">
-                      <Switch
-                        checked={day.is_open}
-                        onCheckedChange={(checked) =>
-                          updateSchedule.mutate({ id: day.id, updates: { is_open: checked } })
-                        }
-                      />
-                      <span className="w-24 text-sm font-medium text-foreground">{DAY_NAMES[day.day_of_week]}</span>
+                    <div key={day.id} className="rounded-lg border border-border bg-secondary p-3 space-y-2">
+                      <div className="flex items-center gap-3">
+                        <Switch
+                          checked={day.is_open}
+                          onCheckedChange={(checked) =>
+                            updateSchedule.mutate({ id: day.id, updates: { is_open: checked } })
+                          }
+                        />
+                        <span className="w-24 text-sm font-medium text-foreground">{DAY_NAMES[day.day_of_week]}</span>
+                        {day.is_open && (
+                          <div className="flex items-center gap-2">
+                            <Input
+                              type="time"
+                              value={day.open_time.slice(0, 5)}
+                              onChange={(e) =>
+                                updateSchedule.mutate({ id: day.id, updates: { open_time: e.target.value } })
+                              }
+                              className="w-28 border-border bg-background text-sm"
+                            />
+                            <span className="text-muted-foreground">até</span>
+                            <Input
+                              type="time"
+                              value={day.close_time.slice(0, 5)}
+                              onChange={(e) =>
+                                updateSchedule.mutate({ id: day.id, updates: { close_time: e.target.value } })
+                              }
+                              className="w-28 border-border bg-background text-sm"
+                            />
+                          </div>
+                        )}
+                        {!day.is_open && <span className="text-sm text-muted-foreground">Fechado</span>}
+                      </div>
                       {day.is_open && (
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 pl-12">
+                          <span className="text-xs text-muted-foreground whitespace-nowrap">Pausa:</span>
                           <Input
                             type="time"
-                            value={day.open_time.slice(0, 5)}
+                            value={(day as any).break_start?.slice(0, 5) || ""}
                             onChange={(e) =>
-                              updateSchedule.mutate({ id: day.id, updates: { open_time: e.target.value } })
+                              updateSchedule.mutate({ id: day.id, updates: { break_start: e.target.value || null } })
                             }
+                            placeholder="Início"
                             className="w-28 border-border bg-background text-sm"
                           />
-                          <span className="text-muted-foreground">até</span>
+                          <span className="text-muted-foreground text-xs">até</span>
                           <Input
                             type="time"
-                            value={day.close_time.slice(0, 5)}
+                            value={(day as any).break_end?.slice(0, 5) || ""}
                             onChange={(e) =>
-                              updateSchedule.mutate({ id: day.id, updates: { close_time: e.target.value } })
+                              updateSchedule.mutate({ id: day.id, updates: { break_end: e.target.value || null } })
                             }
+                            placeholder="Fim"
                             className="w-28 border-border bg-background text-sm"
                           />
                         </div>
                       )}
-                      {!day.is_open && <span className="text-sm text-muted-foreground">Fechado</span>}
                     </div>
                   ))}
                 </CardContent>

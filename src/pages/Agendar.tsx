@@ -210,7 +210,7 @@ export default function Agendar() {
         <div className="absolute inset-0 bg-background/75" />
       </div>
       {/* Header */}
-      <div className="flex items-center gap-3 px-4 py-4">
+      <div className="relative z-10 flex items-center gap-3 px-4 py-4">
         <button onClick={goBack} className="text-foreground hover:text-primary transition-colors">
           <ArrowLeft className="h-5 w-5" />
         </button>

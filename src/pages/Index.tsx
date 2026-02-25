@@ -33,7 +33,7 @@ const Index = () => {
           <img
             src={logoFal}
             alt={`${businessName} Logo`}
-            className="h-48 w-auto max-w-[80vw] object-contain drop-shadow-2xl sm:h-56 md:h-64"
+            className="h-48 w-auto max-w-[80vw] rounded-3xl object-contain drop-shadow-2xl sm:h-56 md:h-64"
           />
         </div>
 

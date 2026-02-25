@@ -202,7 +202,12 @@ export default function Agendar() {
   };
 
   return (
-    <main className="min-h-screen bg-background">
+    <main className="relative min-h-screen bg-background">
+      {/* Premium background */}
+      <div className="pointer-events-none fixed inset-0 z-0">
+        <img src={(await import("@/assets/site-background.png")).default} alt="" aria-hidden="true" className="h-full w-full object-cover opacity-30" />
+        <div className="absolute inset-0 bg-background/75" />
+      </div>
       {/* Header */}
       <div className="flex items-center gap-3 px-4 py-4">
         <button onClick={goBack} className="text-foreground hover:text-primary transition-colors">

@@ -3,6 +3,7 @@ import { WhatsAppButton } from "@/components/WhatsAppButton";
 import { Scissors, Clock, MapPin, Phone } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import logoFal from "@/assets/logo-fal.jpeg";
+import siteBg from "@/assets/site-background.png";
 import { useBusinessName } from "@/hooks/useBusinessName";
 
 const Index = () => {
@@ -11,18 +12,19 @@ const Index = () => {
 
   return (
     <main className="relative flex min-h-[100dvh] flex-col items-center justify-center overflow-hidden bg-background">
-      {/* Logo as large background */}
-      <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+      {/* Premium background image */}
+      <div className="pointer-events-none absolute inset-0">
         <img
-          src={logoFal}
+          src={siteBg}
           alt=""
           aria-hidden="true"
-          className="h-[70vmin] w-[70vmin] max-h-[500px] max-w-[500px] rounded-full object-cover opacity-15 blur-[2px]"
+          className="h-full w-full object-cover opacity-40"
         />
+        <div className="absolute inset-0 bg-background/70" />
       </div>
 
       {/* Gradient overlays */}
-      <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-background via-transparent to-background" />
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-background/80 via-transparent to-background/80" />
 
       {/* Content */}
       <div className="relative z-10 flex flex-col items-center px-6 text-center">

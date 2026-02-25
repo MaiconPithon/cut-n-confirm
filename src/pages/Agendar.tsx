@@ -206,7 +206,7 @@ export default function Agendar() {
     <main className="relative min-h-screen bg-background">
       {/* Premium background */}
       <div className="pointer-events-none fixed inset-0 z-0">
-        <img src={siteBg} alt="" aria-hidden="true" className="h-full w-full object-cover opacity-30" />
+        <img src={siteBg} alt="" aria-hidden="true" className="h-full w-full object-cover opacity-30" loading="eager" />
         <div className="absolute inset-0 bg-background/75" />
       </div>
       {/* Header */}

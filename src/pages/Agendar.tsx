@@ -220,7 +220,7 @@ export default function Agendar() {
       </div>
 
       {/* Progress bar */}
-      <div className="flex gap-1 px-4 pb-6">
+      <div className="relative z-10 flex gap-1 px-4 pb-6">
         {STEPS.map((s, i) => (
           <div
             key={s}

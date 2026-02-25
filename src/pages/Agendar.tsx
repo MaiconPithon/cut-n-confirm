@@ -1,4 +1,3 @@
-import siteBg from "@/assets/site-background.png";
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -204,13 +203,8 @@ export default function Agendar() {
 
   return (
     <main className="relative min-h-screen bg-background">
-      {/* Premium background */}
-      <div className="pointer-events-none fixed inset-0 z-0">
-        <img src={siteBg} alt="" aria-hidden="true" className="h-full w-full object-cover opacity-30" loading="eager" />
-        <div className="absolute inset-0 bg-background/75" />
-      </div>
       {/* Header */}
-      <div className="relative z-10 flex items-center gap-3 px-4 py-4">
+      <div className="flex items-center gap-3 px-4 py-4">
         <button onClick={goBack} className="text-foreground hover:text-primary transition-colors">
           <ArrowLeft className="h-5 w-5" />
         </button>
@@ -220,7 +214,7 @@ export default function Agendar() {
       </div>
 
       {/* Progress bar */}
-      <div className="relative z-10 flex gap-1 px-4 pb-6">
+      <div className="flex gap-1 px-4 pb-6">
         {STEPS.map((s, i) => (
           <div
             key={s}
@@ -232,7 +226,7 @@ export default function Agendar() {
         ))}
       </div>
 
-      <div className="relative z-10 px-4 pb-24">
+      <div className="px-4 pb-24">
         {/* Step: Service */}
         {step === "service" && (
           <div>

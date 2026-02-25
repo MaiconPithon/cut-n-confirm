@@ -202,7 +202,15 @@ export default function Agendar() {
   };
 
   return (
-    <main className="relative min-h-screen bg-background">
+    <main
+      className="relative min-h-screen"
+      style={{
+        backgroundImage: 'linear-gradient(rgba(10,10,10,0.82), rgba(10,10,10,0.82)), url("/images/site-bg.png")',
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundAttachment: 'fixed',
+      }}
+    >
       {/* Header */}
       <div className="flex items-center gap-3 px-4 py-4">
         <button onClick={goBack} className="text-foreground hover:text-primary transition-colors">

@@ -10,7 +10,15 @@ const Index = () => {
   const { businessName } = useBusinessName();
 
   return (
-    <main className="relative flex min-h-[100dvh] flex-col items-center justify-center overflow-hidden bg-background">
+    <main
+      className="relative flex min-h-[100dvh] flex-col items-center justify-center overflow-hidden"
+      style={{
+        backgroundImage: 'linear-gradient(rgba(10,10,10,0.82), rgba(10,10,10,0.82)), url("/images/site-bg.png")',
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundAttachment: 'fixed',
+      }}
+    >
 
       {/* Content */}
       <div className="relative z-10 flex flex-col items-center px-6 text-center">

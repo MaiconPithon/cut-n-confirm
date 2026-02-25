@@ -114,6 +114,8 @@ export type Database = {
       }
       schedule_config: {
         Row: {
+          break_end: string | null
+          break_start: string | null
           close_time: string
           day_of_week: number
           id: string
@@ -121,6 +123,8 @@ export type Database = {
           open_time: string
         }
         Insert: {
+          break_end?: string | null
+          break_start?: string | null
           close_time?: string
           day_of_week: number
           id?: string
@@ -128,6 +132,8 @@ export type Database = {
           open_time?: string
         }
         Update: {
+          break_end?: string | null
+          break_start?: string | null
           close_time?: string
           day_of_week?: number
           id?: string

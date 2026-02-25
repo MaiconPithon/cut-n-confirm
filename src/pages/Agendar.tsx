@@ -33,6 +33,26 @@ const generateTimeSlots = (openTime = "08:00", closeTime = "21:00") => {
   return slots;
 };
 
+// Check if a slot overlaps with the break period
+const overlapsBreak = (
+  slotTime: string,
+  durationMinutes: number,
+  bufferMinutes: number,
+  breakStart?: string | null,
+  breakEnd?: string | null
+): boolean => {
+  if (!breakStart || !breakEnd) return false;
+  const [sh, sm] = slotTime.split(":").map(Number);
+  const slotStart = sh * 60 + sm;
+  const slotEnd = slotStart + durationMinutes + bufferMinutes;
+  const [bsh, bsm] = breakStart.split(":").map(Number);
+  const [beh, bem] = breakEnd.split(":").map(Number);
+  const bStart = bsh * 60 + bsm;
+  const bEnd = beh * 60 + bem;
+  // Overlap: slot starts before break ends AND slot ends after break starts
+  return slotStart < bEnd && slotEnd > bStart;
+};
+
 const WHATSAPP_NUMBER = "5571988335001";
 
 export default function Agendar() {
@@ -260,7 +280,10 @@ export default function Agendar() {
             ) : (
               <div className="grid grid-cols-3 gap-2">
                 {timeSlots.map((t) => {
-                  const taken = bookedTimes.has(t) || blockedTimes.has(t);
+                  const duration = selectedService?.duration_minutes ?? 30;
+                  const buffer = selectedService?.buffer_minutes ?? 5;
+                  const inBreak = overlapsBreak(t, duration, buffer, (dayConfig as any)?.break_start, (dayConfig as any)?.break_end);
+                  const taken = bookedTimes.has(t) || blockedTimes.has(t) || inBreak;
                   return (
                     <button
                       key={t}

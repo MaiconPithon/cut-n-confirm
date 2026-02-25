@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { WhatsAppButton } from "@/components/WhatsAppButton";
 import { Scissors, Clock, MapPin, Phone } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import logoFal from "@/assets/logo-fal.jpeg";
+import logoFal from "@/assets/logo-fal.png";
 import siteBg from "@/assets/site-background.png";
 import { useBusinessName } from "@/hooks/useBusinessName";
 
@@ -29,13 +29,11 @@ const Index = () => {
       {/* Content */}
       <div className="relative z-10 flex flex-col items-center px-6 text-center">
         {/* Sharp logo on top */}
-        <div className="mb-6 relative">
-          <div className="absolute -inset-3 rounded-full border border-primary/30" />
-          <div className="absolute -inset-6 rounded-full border border-primary/10" />
+        <div className="mb-8">
           <img
             src={logoFal}
             alt={`${businessName} Logo`}
-            className="h-32 w-32 rounded-full border-2 border-primary object-cover shadow-2xl shadow-primary/25 sm:h-40 sm:w-40"
+            className="h-48 w-auto max-w-[80vw] object-contain drop-shadow-2xl sm:h-56 md:h-64"
           />
         </div>
 

@@ -15,7 +15,7 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { LogOut, Calendar as CalendarIcon, DollarSign, UserPlus, Home, Settings, Clock, Ban, Trash2, KeyRound, X, Shield } from "lucide-react";
+import { LogOut, Calendar as CalendarIcon, DollarSign, UserPlus, Home, Settings, Clock, Ban, Trash2, KeyRound, X, Shield, MessageCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useBusinessName } from "@/hooks/useBusinessName";
 import type { Tables } from "@/integrations/supabase/types";
@@ -333,6 +333,19 @@ export default function Admin() {
     ? appointments?.filter((a) => a.appointment_date === format(filterDate, "yyyy-MM-dd"))
     : appointments;
 
+  const formatPhoneForWhatsApp = (phone: string) => {
+    const digits = phone.replace(/\D/g, "");
+    return digits.startsWith("55") ? digits : `55${digits}`;
+  };
+
+  const buildReminderUrl = (a: Appointment) => {
+    const phone = formatPhoneForWhatsApp(a.client_phone);
+    const time = a.appointment_time.slice(0, 5);
+    const service = a.services?.name || "corte";
+    const msg = `Olá, ${a.client_name}! Passando para lembrar do seu agendamento de ${service} hoje às ${time} aqui na ${businessName}. Te aguardamos!`;
+    return `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`;
+  };
+
   const todayStr = format(new Date(), "yyyy-MM-dd");
   const todayTotal = appointments?.filter((a) => a.appointment_date === todayStr && a.status !== "cancelado").reduce((sum, a) => sum + Number(a.price), 0) || 0;
   const todayCount = appointments?.filter((a) => a.appointment_date === todayStr && a.status !== "cancelado").length || 0;
@@ -462,7 +475,7 @@ export default function Admin() {
                           <TableHead className="text-primary">Valor</TableHead>
                           <TableHead className="text-primary">Pgto</TableHead>
                           <TableHead className="text-primary">Status</TableHead>
-                          <TableHead className="text-primary w-12"></TableHead>
+                          <TableHead className="text-primary w-24"></TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -490,7 +503,17 @@ export default function Admin() {
                                 </SelectContent>
                               </Select>
                             </TableCell>
-                            <TableCell>
+                            <TableCell className="flex gap-1">
+                              <a
+                                href={buildReminderUrl(a)}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                title="Enviar lembrete via WhatsApp"
+                              >
+                                <Button variant="ghost" size="icon" className="h-8 w-8 text-green-500 hover:text-green-400">
+                                  <MessageCircle className="h-4 w-4" />
+                                </Button>
+                              </a>
                               <Button
                                 variant="ghost"
                                 size="icon"

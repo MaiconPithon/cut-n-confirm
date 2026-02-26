@@ -342,7 +342,7 @@ export default function Admin() {
     const phone = formatPhoneForWhatsApp(a.client_phone);
     const time = a.appointment_time.slice(0, 5);
     const service = a.services?.name || "corte";
-    const msg = `Olá, ${a.client_name}! Passando para lembrar do seu agendamento de ${service} hoje às ${time} aqui na ${businessName}. Te aguardamos!`;
+    const msg = `_Olá, ${a.client_name}! Passando para lembrar do seu agendamento de 💇🏽‍♂️ ${service}_ *hoje às ${time}*⌚ -> 💈 _${businessName}_ 💈. *Te aguardamos* !`;
     return `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`;
   };
 

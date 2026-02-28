@@ -18,8 +18,8 @@ type Step = "service" | "date" | "time" | "info" | "payment" | "confirm" | "conf
 
 const STEPS: Step[] = ["service", "date", "time", "info", "payment", "confirm"];
 
-// Generate time slots dynamically based on schedule config
-const generateTimeSlots = (openTime = "08:00", closeTime = "21:00") => {
+// Generate time slots dynamically based on schedule config and interval
+const generateTimeSlots = (openTime = "08:00", closeTime = "21:00", intervalMinutes = 30) => {
   const slots: string[] = [];
   const [oh, om] = openTime.split(":").map(Number);
   const [ch, cm] = closeTime.split(":").map(Number);
@@ -29,7 +29,7 @@ const generateTimeSlots = (openTime = "08:00", closeTime = "21:00") => {
     const h = Math.floor(mins / 60);
     const m = mins % 60;
     slots.push(`${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`);
-    mins += 30; // base 30min grid
+    mins += intervalMinutes;
   }
   return slots;
 };
@@ -54,11 +54,12 @@ const overlapsBreak = (
 };
 
 // Check if a slot collides with existing appointments considering duration
+// Uses actual_end_time for early-finished appointments
 const overlapsExisting = (
   slotTime: string,
   totalDuration: number,
   totalBuffer: number,
-  bookedAppointments: { appointment_time: string; duration_minutes: number; buffer_minutes: number }[]
+  bookedAppointments: { appointment_time: string; duration_minutes: number; buffer_minutes: number; actual_end_time?: string | null }[]
 ): boolean => {
   const [sh, sm] = slotTime.split(":").map(Number);
   const slotStart = sh * 60 + sm;
@@ -67,7 +68,14 @@ const overlapsExisting = (
   for (const appt of bookedAppointments) {
     const [ah, am] = appt.appointment_time.split(":").map(Number);
     const apptStart = ah * 60 + am;
-    const apptEnd = apptStart + appt.duration_minutes + appt.buffer_minutes;
+    let apptEnd: number;
+    if (appt.actual_end_time) {
+      // Early finish: use actual end time instead of scheduled duration
+      const [eh, em] = appt.actual_end_time.split(":").map(Number);
+      apptEnd = eh * 60 + em;
+    } else {
+      apptEnd = apptStart + appt.duration_minutes + appt.buffer_minutes;
+    }
     if (slotStart < apptEnd && slotEnd > apptStart) return true;
   }
   return false;
@@ -110,9 +118,9 @@ export default function Agendar() {
       const dateStr = format(selectedDate!, "yyyy-MM-dd");
       const { data, error } = await supabase
         .from("appointments")
-        .select("appointment_time, service_id, status, services(duration_minutes, buffer_minutes)")
+        .select("appointment_time, service_id, status, actual_end_time, services(duration_minutes, buffer_minutes)")
         .eq("appointment_date", dateStr)
-        .in("status", ["pendente", "confirmado"]);
+        .in("status", ["pendente", "confirmado", "finalizado"]);
       if (error) throw error;
       return data;
     },
@@ -169,14 +177,30 @@ export default function Agendar() {
     appointment_time: a.appointment_time,
     duration_minutes: a.services?.duration_minutes ?? 30,
     buffer_minutes: a.services?.buffer_minutes ?? 5,
+    actual_end_time: a.actual_end_time || null,
   }));
 
   const isFullDayBlocked = blockedSlots?.some((b) => b.full_day);
   const blockedTimes = new Set(blockedSlots?.filter((b) => b.blocked_time).map((b) => b.blocked_time!.slice(0, 5)) || []);
 
+  // Fetch slot interval setting
+  const { data: slotIntervalSetting } = useQuery({
+    queryKey: ["slot_interval"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("business_settings")
+        .select("value")
+        .eq("key", "slot_interval_minutes")
+        .maybeSingle();
+      if (error) throw error;
+      return data?.value ? parseInt(data.value, 10) : 30;
+    },
+  });
+  const slotInterval = slotIntervalSetting || 30;
+
   const selectedDow = selectedDate ? getDay(selectedDate) : undefined;
   const dayConfig = scheduleConfig?.find((c) => c.day_of_week === selectedDow);
-  const timeSlots = generateTimeSlots(dayConfig?.open_time?.slice(0, 5), dayConfig?.close_time?.slice(0, 5));
+  const timeSlots = generateTimeSlots(dayConfig?.open_time?.slice(0, 5), dayConfig?.close_time?.slice(0, 5), slotInterval);
 
   const maxDate = addDays(startOfDay(new Date()), 7);
 

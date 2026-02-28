@@ -49,6 +49,7 @@ export default function Admin() {
   const [editingPasswordId, setEditingPasswordId] = useState<string | null>(null);
   const [newUserPassword, setNewUserPassword] = useState("");
   const [businessNameInput, setBusinessNameInput] = useState("");
+  const [slotIntervalInput, setSlotIntervalInput] = useState("30");
   const { businessName } = useBusinessName();
   const appearanceSettings = useAppearance();
 
@@ -77,6 +78,19 @@ export default function Admin() {
   useEffect(() => {
     if (businessName) setBusinessNameInput(businessName);
   }, [businessName]);
+
+  // Fetch slot interval setting
+  useEffect(() => {
+    const fetchInterval = async () => {
+      const { data } = await supabase
+        .from("business_settings")
+        .select("value")
+        .eq("key", "slot_interval_minutes")
+        .maybeSingle();
+      if (data?.value) setSlotIntervalInput(data.value);
+    };
+    fetchInterval();
+  }, []);
 
   const { data: appointments, isLoading } = useQuery({
     queryKey: ["admin-appointments"],
@@ -150,7 +164,19 @@ export default function Admin() {
 
   const updateStatus = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: string }) => {
-      const { error } = await supabase.from("appointments").update({ status: status as any }).eq("id", id);
+      const updates: Record<string, any> = { status };
+      // Early finish: store actual end time when marked as finalizado
+      if (status === "finalizado") {
+        const now = new Date();
+        const hh = String(now.getHours()).padStart(2, "0");
+        const mm = String(now.getMinutes()).padStart(2, "0");
+        updates.actual_end_time = `${hh}:${mm}`;
+      }
+      // Clear actual_end_time if reverting from finalizado
+      if (status !== "finalizado") {
+        updates.actual_end_time = null;
+      }
+      const { error } = await supabase.from("appointments").update(updates as any).eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -310,6 +336,31 @@ export default function Admin() {
       if (!res.ok) throw new Error(result.error);
       toast.success("Usuário excluído!");
       refetchAdminUsers();
+    } catch (err: any) {
+      toast.error(err.message);
+    }
+  };
+
+  const handleSaveSlotInterval = async () => {
+    try {
+      const { data: existing } = await supabase
+        .from("business_settings")
+        .select("id")
+        .eq("key", "slot_interval_minutes")
+        .maybeSingle();
+      if (existing) {
+        const { error } = await supabase
+          .from("business_settings" as any)
+          .update({ value: slotIntervalInput } as any)
+          .eq("key", "slot_interval_minutes");
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from("business_settings" as any)
+          .insert({ key: "slot_interval_minutes", value: slotIntervalInput } as any);
+        if (error) throw error;
+      }
+      toast.success(`Intervalo atualizado para ${slotIntervalInput} minutos!`);
     } catch (err: any) {
       toast.error(err.message);
     }
@@ -507,7 +558,7 @@ export default function Admin() {
                                 <SelectContent>
                                   <SelectItem value="pendente">Pendente</SelectItem>
                                   <SelectItem value="confirmado">Confirmado</SelectItem>
-                                  <SelectItem value="finalizado">Finalizado</SelectItem>
+                                  <SelectItem value="finalizado">✅ Concluído</SelectItem>
                                   <SelectItem value="cancelado">Cancelado</SelectItem>
                                 </SelectContent>
                               </Select>
@@ -880,9 +931,9 @@ export default function Admin() {
                 </CardHeader>
                 <CardContent>
                   <p className="mb-4 text-sm text-muted-foreground">
-                    Altere o nome do estabelecimento. Ele será exibido em todo o site e no painel.
+                    Altere o nome do estabelecimento e configurações de agendamento.
                   </p>
-                  <div className="max-w-sm space-y-4">
+                  <div className="max-w-sm space-y-6">
                     <div>
                       <label className="mb-1 block text-sm font-medium text-foreground">Nome do Estabelecimento</label>
                       <Input
@@ -895,6 +946,30 @@ export default function Admin() {
                       <Settings className="h-4 w-4" />
                       Salvar Nome
                     </Button>
+
+                    <div className="border-t border-border pt-4">
+                      <label className="mb-1 block text-sm font-medium text-foreground">Intervalo de Agendamento (minutos)</label>
+                      <p className="mb-2 text-xs text-muted-foreground">Define o pulo entre horários na grade do cliente (ex: 30, 45, 60).</p>
+                      <div className="flex gap-2">
+                        <Select
+                          value={slotIntervalInput}
+                          onValueChange={(v) => setSlotIntervalInput(v)}
+                        >
+                          <SelectTrigger className="w-32">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="15">15 min</SelectItem>
+                            <SelectItem value="30">30 min</SelectItem>
+                            <SelectItem value="45">45 min</SelectItem>
+                            <SelectItem value="60">60 min</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <Button onClick={handleSaveSlotInterval} variant="outline" className="gap-2">
+                          <Clock className="h-4 w-4" /> Salvar Intervalo
+                        </Button>
+                      </div>
+                    </div>
                   </div>
                 </CardContent>
               </Card>

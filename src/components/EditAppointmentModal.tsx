@@ -149,7 +149,7 @@ export function EditAppointmentModal({ open, onOpenChange, appointment }: EditAp
                 onChange={(e) => setCustomPrice(e.target.value)}
                 className="w-24 border-border bg-secondary"
               />
-              <Button size="icon" variant="outline" onClick={addCustomItem}>
+              <Button type="button" size="icon" variant="outline" onClick={addCustomItem}>
                 <Plus className="h-4 w-4" />
               </Button>
             </div>
@@ -191,6 +191,7 @@ export function EditAppointmentModal({ open, onOpenChange, appointment }: EditAp
           </div>
 
           <Button
+            type="button"
             className="w-full"
             onClick={() => updateMutation.mutate()}
             disabled={updateMutation.isPending || grandTotal <= 0}

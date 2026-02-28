@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { WhatsAppButton } from "@/components/WhatsAppButton";
 import { Scissors, Clock, MapPin, Phone } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import logoFal from "@/assets/logo-fal.png";
+import logoFalFallback from "@/assets/logo-fal.png";
 import { useBusinessName } from "@/hooks/useBusinessName";
 import { useAppearance } from "@/hooks/useAppearance";
 
@@ -27,7 +27,7 @@ const Index = () => {
         {/* Sharp logo on top */}
         <div className="mb-8">
           <img
-            src={logoFal}
+            src={appearance?.logo_image || logoFalFallback}
             alt={`${businessName} Logo`}
             className="h-48 w-auto max-w-[80vw] rounded-3xl object-contain drop-shadow-2xl sm:h-56 md:h-64"
           />

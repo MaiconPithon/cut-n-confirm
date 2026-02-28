@@ -3,6 +3,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { HashRouter, Routes, Route } from "react-router-dom";
+import { SpeedInsights } from "@vercel/speed-insights/react";
 import { useAppearance } from "@/hooks/useAppearance";
 import Index from "./pages/Index";
 import Agendar from "./pages/Agendar";
@@ -34,6 +35,7 @@ const App = () => (
             <Route path="*" element={<NotFound />} />
           </Routes>
         </HashRouter>
+        <SpeedInsights />
       </AppearanceLoader>
     </TooltipProvider>
   </QueryClientProvider>

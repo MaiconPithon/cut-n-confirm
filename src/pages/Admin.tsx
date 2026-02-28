@@ -491,7 +491,7 @@ export default function Admin() {
                             <TableCell className="text-foreground">{a.appointment_time.slice(0, 5)}</TableCell>
                             <TableCell className="text-foreground">{a.client_name}</TableCell>
                             <TableCell className="text-foreground">{a.client_phone}</TableCell>
-                            <TableCell className="text-foreground">{a.services?.name}</TableCell>
+                            <TableCell className="text-foreground">{(a as any).service_description || a.services?.name}</TableCell>
                             <TableCell className="text-primary font-semibold">R$ {Number(a.price).toFixed(2).replace(".", ",")}</TableCell>
                             <TableCell className="text-foreground capitalize">{a.payment_method}</TableCell>
                             <TableCell>

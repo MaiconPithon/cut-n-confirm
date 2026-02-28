@@ -16,6 +16,7 @@ interface EditAppointmentModalProps {
     price: number;
     service_id: string;
     services: { name: string } | null;
+    service_description?: string | null;
   } | null;
 }
 
@@ -49,17 +50,24 @@ export function EditAppointmentModal({ open, onOpenChange, appointment }: EditAp
     }
   }, [appointment, open]);
 
-  const totalFromServices = services
-    ?.filter((s) => selectedServiceIds.has(s.id))
-    .reduce((sum, s) => sum + Number(s.price), 0) || 0;
+  const selectedServices = services?.filter((s) => selectedServiceIds.has(s.id)) || [];
+  const totalFromServices = selectedServices.reduce((sum, s) => sum + Number(s.price), 0);
   const totalFromCustom = customItems.reduce((sum, c) => sum + c.price, 0);
   const grandTotal = totalFromServices + totalFromCustom;
+
+  // Build description string
+  const serviceNames = selectedServices.map((s) => s.name);
+  const customNames = customItems.map((c) => c.name);
+  const fullDescription = [...serviceNames, ...customNames].join(" + ");
 
   const updateMutation = useMutation({
     mutationFn: async () => {
       const { error } = await supabase
         .from("appointments")
-        .update({ price: grandTotal })
+        .update({
+          price: grandTotal,
+          service_description: fullDescription,
+        } as any)
         .eq("id", appointment!.id);
       if (error) throw error;
     },
@@ -163,6 +171,14 @@ export function EditAppointmentModal({ open, onOpenChange, appointment }: EditAp
               </div>
             )}
           </div>
+
+          {/* Description preview */}
+          {fullDescription && (
+            <div className="rounded-lg border border-primary/30 bg-primary/5 p-2">
+              <p className="text-xs text-muted-foreground">Descrição:</p>
+              <p className="text-sm font-medium text-foreground">{fullDescription}</p>
+            </div>
+          )}
 
           {/* Total */}
           <div className="border-t border-border pt-3">

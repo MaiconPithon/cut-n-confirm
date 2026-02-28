@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Calendar } from "@/components/ui/calendar";
+import { Checkbox } from "@/components/ui/checkbox";
 import { WhatsAppButton } from "@/components/WhatsAppButton";
 import { PixPayment } from "@/components/PixPayment";
 import { ArrowLeft, ChevronRight, Check, MessageCircle } from "lucide-react";
@@ -49,8 +50,27 @@ const overlapsBreak = (
   const [beh, bem] = breakEnd.split(":").map(Number);
   const bStart = bsh * 60 + bsm;
   const bEnd = beh * 60 + bem;
-  // Overlap: slot starts before break ends AND slot ends after break starts
   return slotStart < bEnd && slotEnd > bStart;
+};
+
+// Check if a slot collides with existing appointments considering duration
+const overlapsExisting = (
+  slotTime: string,
+  totalDuration: number,
+  totalBuffer: number,
+  bookedAppointments: { appointment_time: string; duration_minutes: number; buffer_minutes: number }[]
+): boolean => {
+  const [sh, sm] = slotTime.split(":").map(Number);
+  const slotStart = sh * 60 + sm;
+  const slotEnd = slotStart + totalDuration + totalBuffer;
+
+  for (const appt of bookedAppointments) {
+    const [ah, am] = appt.appointment_time.split(":").map(Number);
+    const apptStart = ah * 60 + am;
+    const apptEnd = apptStart + appt.duration_minutes + appt.buffer_minutes;
+    if (slotStart < apptEnd && slotEnd > apptStart) return true;
+  }
+  return false;
 };
 
 const WHATSAPP_NUMBER = "5571988335001";
@@ -58,7 +78,7 @@ const WHATSAPP_NUMBER = "5571988335001";
 export default function Agendar() {
   const navigate = useNavigate();
   const [step, setStep] = useState<Step>("service");
-  const [selectedService, setSelectedService] = useState<any>(null);
+  const [selectedServiceIds, setSelectedServiceIds] = useState<Set<string>>(new Set());
   const [selectedDate, setSelectedDate] = useState<Date | undefined>();
   const [selectedTime, setSelectedTime] = useState<string>("");
   const [clientName, setClientName] = useState("");
@@ -83,14 +103,14 @@ export default function Agendar() {
     },
   });
 
-  const { data: appointments } = useQuery({
+  const { data: appointmentsRaw } = useQuery({
     queryKey: ["appointments", selectedDate?.toISOString()],
     enabled: !!selectedDate,
     queryFn: async () => {
       const dateStr = format(selectedDate!, "yyyy-MM-dd");
       const { data, error } = await supabase
         .from("appointments")
-        .select("appointment_time")
+        .select("appointment_time, service_id, services(duration_minutes, buffer_minutes)")
         .eq("appointment_date", dateStr)
         .neq("status", "cancelado");
       if (error) throw error;
@@ -112,7 +132,6 @@ export default function Agendar() {
     },
   });
 
-  // Fetch all full-day blocked dates for calendar disabling
   const { data: allBlockedDates } = useQuery({
     queryKey: ["blocked_dates_calendar"],
     queryFn: async () => {
@@ -129,43 +148,32 @@ export default function Agendar() {
     },
   });
 
-  const createAppointment = useMutation({
-    mutationFn: async () => {
-      const { data, error } = await supabase
-        .from("appointments")
-        .insert({
-          client_name: clientName,
-          client_phone: clientPhone,
-          service_id: selectedService.id,
-          appointment_date: format(selectedDate!, "yyyy-MM-dd"),
-          appointment_time: selectedTime,
-          payment_method: paymentMethod,
-          price: selectedService.price,
-        })
-        .select()
-        .single();
-      if (error) throw error;
-      return data;
-    },
-    onSuccess: () => {
-      setStep("confirmed");
-      toast.success("Agendamento realizado com sucesso!");
-      // Send WhatsApp notification to barber
-      const dateStr = selectedDate ? format(selectedDate, "dd/MM/yyyy") : "";
-      const valor = `R$ ${selectedService?.price.toFixed(2).replace(".", ",")}`;
-      const barberMsg = `🔔 *Novo Agendamento!*\n\n👤 Cliente: ${clientName}\n📱 Tel: ${clientPhone}\n✂️ Serviço: ${selectedService?.name}\n📅 Data: ${dateStr} às ${selectedTime}\n💰 Valor: ${valor}\n💳 Pagamento: ${paymentMethod === "pix" ? "Pix" : "Dinheiro"}`;
-      window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(barberMsg)}`, "_blank");
-    },
-    onError: () => {
-      toast.error("Erro ao agendar. Tente novamente.");
-    },
-  });
+  // Derived: selected services
+  const selectedServices = services?.filter((s) => selectedServiceIds.has(s.id)) || [];
+  const totalPrice = selectedServices.reduce((sum, s) => sum + Number(s.price), 0);
+  const totalDuration = selectedServices.reduce((sum, s) => sum + s.duration_minutes, 0);
+  const totalBuffer = selectedServices.length > 0 ? Math.max(...selectedServices.map((s) => s.buffer_minutes)) : 5;
+  const serviceDescription = selectedServices.map((s) => s.name).join(" + ");
 
-  const bookedTimes = new Set(appointments?.map((a) => a.appointment_time.slice(0, 5)) || []);
+  const toggleService = (id: string) => {
+    setSelectedServiceIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  // Build booked appointments with duration info for overlap checking
+  const bookedAppointments = (appointmentsRaw || []).map((a: any) => ({
+    appointment_time: a.appointment_time,
+    duration_minutes: a.services?.duration_minutes ?? 30,
+    buffer_minutes: a.services?.buffer_minutes ?? 5,
+  }));
+
   const isFullDayBlocked = blockedSlots?.some((b) => b.full_day);
   const blockedTimes = new Set(blockedSlots?.filter((b) => b.blocked_time).map((b) => b.blocked_time!.slice(0, 5)) || []);
 
-  // Get schedule config for selected date
   const selectedDow = selectedDate ? getDay(selectedDate) : undefined;
   const dayConfig = scheduleConfig?.find((c) => c.day_of_week === selectedDow);
   const timeSlots = generateTimeSlots(dayConfig?.open_time?.slice(0, 5), dayConfig?.close_time?.slice(0, 5));
@@ -183,6 +191,40 @@ export default function Agendar() {
     return false;
   };
 
+  const createAppointment = useMutation({
+    mutationFn: async () => {
+      const firstServiceId = selectedServices[0]?.id;
+      if (!firstServiceId) throw new Error("Selecione ao menos um serviço");
+      const { data, error } = await supabase
+        .from("appointments")
+        .insert({
+          client_name: clientName,
+          client_phone: clientPhone,
+          service_id: firstServiceId,
+          appointment_date: format(selectedDate!, "yyyy-MM-dd"),
+          appointment_time: selectedTime,
+          payment_method: paymentMethod,
+          price: totalPrice,
+          service_description: serviceDescription,
+        } as any)
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      setStep("confirmed");
+      toast.success("Agendamento realizado com sucesso!");
+      const dateStr = selectedDate ? format(selectedDate, "dd/MM/yyyy") : "";
+      const valor = `R$ ${totalPrice.toFixed(2).replace(".", ",")}`;
+      const barberMsg = `🔔 *Novo Agendamento!*\n\n👤 Cliente: ${clientName}\n📱 Tel: ${clientPhone}\n✂️ Serviço: ${serviceDescription}\n📅 Data: ${dateStr} às ${selectedTime}\n💰 Valor: ${valor}\n💳 Pagamento: ${paymentMethod === "pix" ? "Pix" : "Dinheiro"}`;
+      window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(barberMsg)}`, "_blank");
+    },
+    onError: () => {
+      toast.error("Erro ao agendar. Tente novamente.");
+    },
+  });
+
   const currentStepIndex = STEPS.indexOf(step === "confirmed" ? "confirm" : step);
 
   const goBack = () => {
@@ -193,7 +235,7 @@ export default function Agendar() {
 
   const canContinue = () => {
     switch (step) {
-      case "service": return !!selectedService;
+      case "service": return selectedServiceIds.size > 0;
       case "date": return !!selectedDate;
       case "time": return !!selectedTime;
       case "info": return clientName.trim().length > 0 && clientPhone.trim().length > 0;
@@ -214,13 +256,13 @@ export default function Agendar() {
 
   const whatsappMessage = () => {
     const dateStr = selectedDate ? format(selectedDate, "dd/MM/yyyy") : "";
-    const valor = `R$ ${selectedService?.price.toFixed(2).replace(".", ",")}`;
-    const msg = `✅ Agendamento Confirmado!\n\n📍 Barbearia Fal\n👤 Cliente: ${clientName}\n✂️ Serviço: ${selectedService?.name}\n📅 Data: ${dateStr} às ${selectedTime}\n💰 Valor: ${valor}\n\nPor favor, envie o comprovante do Pix para garantir sua vaga!`;
+    const valor = `R$ ${totalPrice.toFixed(2).replace(".", ",")}`;
+    const msg = `✅ Agendamento Confirmado!\n\n📍 Barbearia Fal\n👤 Cliente: ${clientName}\n✂️ Serviço: ${serviceDescription}\n📅 Data: ${dateStr} às ${selectedTime}\n💰 Valor: ${valor}\n\nPor favor, envie o comprovante do Pix para garantir sua vaga!`;
     return `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(msg)}`;
   };
 
   const whatsappComprovante = () => {
-    const msg = `Olá! Segue o comprovante do Pix para o agendamento:\n\n👤 Nome: ${clientName}\n✂️ Serviço: ${selectedService?.name}\n💵 Valor: R$ ${selectedService?.price.toFixed(2).replace(".", ",")}`;
+    const msg = `Olá! Segue o comprovante do Pix para o agendamento:\n\n👤 Nome: ${clientName}\n✂️ Serviço: ${serviceDescription}\n💵 Valor: R$ ${totalPrice.toFixed(2).replace(".", ",")}`;
     return `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(msg)}`;
   };
 
@@ -258,27 +300,41 @@ export default function Agendar() {
       </div>
 
       <div className="px-4 pb-24">
-        {/* Step: Service */}
+        {/* Step: Service — now multi-select with checkboxes */}
         {step === "service" && (
           <div>
-            <h2 className="mb-4 text-lg font-semibold text-primary">Escolha o serviço</h2>
+            <h2 className="mb-4 text-lg font-semibold text-primary">Escolha os serviços</h2>
             <div className="space-y-2">
               {services?.map((s) => (
-                <button
+                <label
                   key={s.id}
-                  onClick={() => setSelectedService(s)}
                   className={cn(
-                    "flex w-full items-center justify-between rounded-lg border px-5 py-4 text-left transition-colors",
-                    selectedService?.id === s.id
+                    "flex w-full items-center gap-3 rounded-lg border px-5 py-4 cursor-pointer transition-colors",
+                    selectedServiceIds.has(s.id)
                       ? "border-primary bg-primary/10"
                       : "border-border bg-secondary"
                   )}
                 >
-                  <span className="font-medium text-foreground">{s.name}</span>
-                  <span className="font-semibold text-primary">R$ {s.price.toFixed(2).replace(".", ",")}</span>
-                </button>
+                  <Checkbox
+                    checked={selectedServiceIds.has(s.id)}
+                    onCheckedChange={() => toggleService(s.id)}
+                  />
+                  <span className="flex-1 font-medium text-foreground">{s.name}</span>
+                  <span className="font-semibold text-primary">R$ {Number(s.price).toFixed(2).replace(".", ",")}</span>
+                </label>
               ))}
             </div>
+            {selectedServiceIds.size > 0 && (
+              <div className="mt-4 rounded-lg border border-primary/30 bg-primary/5 p-3">
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Total: <strong className="text-primary">{serviceDescription}</strong></span>
+                </div>
+                <div className="flex justify-between mt-1">
+                  <span className="text-sm text-muted-foreground">Duração: {totalDuration} min</span>
+                  <span className="text-lg font-bold text-primary">R$ {totalPrice.toFixed(2).replace(".", ",")}</span>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
@@ -299,36 +355,46 @@ export default function Agendar() {
           </div>
         )}
 
-        {/* Step: Time */}
+        {/* Step: Time — uses totalDuration for overlap checking */}
         {step === "time" && (
           <div>
             <h2 className="mb-1 text-lg font-semibold text-primary">Escolha o horário</h2>
             <p className="mb-4 text-sm text-muted-foreground">
               {selectedDate && format(selectedDate, "dd 'de' MMMM", { locale: ptBR })}
+              {" — "}{totalDuration} min necessários
             </p>
             {isFullDayBlocked ? (
               <p className="text-center text-muted-foreground">Este dia está bloqueado.</p>
             ) : (
               <div className="grid grid-cols-3 gap-2">
                 {timeSlots.map((t) => {
-                  const duration = selectedService?.duration_minutes ?? 30;
-                  const buffer = selectedService?.buffer_minutes ?? 5;
-                  const inBreak = overlapsBreak(t, duration, buffer, (dayConfig as any)?.break_start, (dayConfig as any)?.break_end);
-                  // Block past times if selected date is today
+                  const duration = totalDuration || 30;
+                  const buffer = totalBuffer || 5;
+                  const inBreak = overlapsBreak(t, duration, buffer, dayConfig?.break_start, dayConfig?.break_end);
                   const isPast = selectedDate && isToday(selectedDate) && (() => {
                     const [h, m] = t.split(":").map(Number);
                     const now = new Date();
                     return h < now.getHours() || (h === now.getHours() && m <= now.getMinutes());
                   })();
-                  const taken = bookedTimes.has(t) || blockedTimes.has(t) || inBreak || !!isPast;
+                  // Check overlap with existing booked appointments
+                  const overlapsBooked = overlapsExisting(t, duration, buffer, bookedAppointments);
+                  const taken = overlapsBooked || blockedTimes.has(t) || inBreak || !!isPast;
+                  
+                  // Check if slot + duration fits within closing time
+                  const [sh, sm] = t.split(":").map(Number);
+                  const slotEnd = sh * 60 + sm + duration;
+                  const [ch, cm] = (dayConfig?.close_time?.slice(0, 5) || "21:00").split(":").map(Number);
+                  const closeMin = ch * 60 + cm;
+                  const exceedsClose = slotEnd > closeMin;
+
                   return (
                     <button
                       key={t}
-                      disabled={taken}
+                      disabled={taken || exceedsClose}
                       onClick={() => setSelectedTime(t)}
                       className={cn(
                         "rounded-lg border px-2 py-3 text-center text-sm font-medium transition-colors",
-                        taken
+                        taken || exceedsClose
                           ? "cursor-not-allowed border-border bg-muted/20 text-muted-foreground line-through"
                           : selectedTime === t
                           ? "border-primary bg-primary text-primary-foreground"
@@ -398,11 +464,10 @@ export default function Agendar() {
               </button>
             </div>
 
-            {/* Full PIX payment interface */}
             {paymentMethod === "pix" && (
               <div className="mt-6">
                 <PixPayment
-                  valor={`R$ ${selectedService?.price.toFixed(2).replace(".", ",")}`}
+                  valor={`R$ ${totalPrice.toFixed(2).replace(".", ",")}`}
                   onSendComprovante={() => {
                     window.open(whatsappComprovante(), "_blank");
                   }}
@@ -435,7 +500,11 @@ export default function Agendar() {
               </p>
               <p className="text-sm text-foreground">
                 <span className="text-muted-foreground">Serviço: </span>
-                <strong>{selectedService?.name}</strong>
+                <strong>{serviceDescription}</strong>
+              </p>
+              <p className="text-sm text-foreground">
+                <span className="text-muted-foreground">Duração: </span>
+                <strong>{totalDuration} min</strong>
               </p>
               <p className="text-sm text-foreground">
                 <span className="text-muted-foreground">Pagamento: </span>
@@ -444,7 +513,7 @@ export default function Agendar() {
               <div className="border-t border-border pt-2 mt-2">
                 <p className="text-sm">
                   <span className="text-muted-foreground">Total: </span>
-                  <span className="font-bold text-primary">R$ {selectedService?.price.toFixed(2).replace(".", ",")}</span>
+                  <span className="font-bold text-primary">R$ {totalPrice.toFixed(2).replace(".", ",")}</span>
                 </p>
               </div>
             </div>
@@ -460,12 +529,12 @@ export default function Agendar() {
             <h2 className="mb-4 text-2xl font-bold text-primary">Agendado!</h2>
             <div className="mb-6 space-y-1 rounded-lg border border-border bg-card p-5 text-left">
               <p className="text-sm"><span className="text-muted-foreground">Nome:</span> <strong>{clientName}</strong></p>
-              <p className="text-sm"><span className="text-muted-foreground">Serviço:</span> <strong>{selectedService?.name}</strong></p>
+              <p className="text-sm"><span className="text-muted-foreground">Serviço:</span> <strong>{serviceDescription}</strong></p>
               <p className="text-sm"><span className="text-muted-foreground">Data:</span> <strong>{selectedDate && format(selectedDate, "dd/MM/yyyy")}</strong></p>
               <p className="text-sm"><span className="text-muted-foreground">Horário:</span> <strong>{selectedTime}</strong></p>
               <p className="text-sm"><span className="text-muted-foreground">Pagamento:</span> <strong>{paymentMethod === "pix" ? "Pix" : "Dinheiro"}</strong></p>
               <div className="border-t border-border pt-2 mt-2">
-                <p className="text-sm"><span className="text-muted-foreground">Total:</span> <span className="font-bold text-primary">R$ {selectedService?.price.toFixed(2).replace(".", ",")}</span></p>
+                <p className="text-sm"><span className="text-muted-foreground">Total:</span> <span className="font-bold text-primary">R$ {totalPrice.toFixed(2).replace(".", ",")}</span></p>
               </div>
             </div>
             <a href={whatsappMessage()} target="_blank" rel="noopener noreferrer" className="block mb-3">

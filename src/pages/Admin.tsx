@@ -50,6 +50,7 @@ export default function Admin() {
   const [newUserPassword, setNewUserPassword] = useState("");
   const [businessNameInput, setBusinessNameInput] = useState("");
   const { businessName } = useBusinessName();
+  const appearanceSettings = useAppearance();
 
   useEffect(() => {
     const checkAdmin = async () => {
@@ -360,7 +361,6 @@ export default function Admin() {
     return <div className="flex min-h-screen items-center justify-center bg-background text-muted-foreground">Verificando acesso...</div>;
   }
 
-  const appearanceSettings = useAppearance();
   const tabCount = isSuperAdmin ? 6 : 4;
 
   return (

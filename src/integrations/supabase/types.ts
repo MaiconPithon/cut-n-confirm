@@ -24,6 +24,7 @@ export type Database = {
           id: string
           payment_method: Database["public"]["Enums"]["payment_method"]
           price: number
+          service_description: string | null
           service_id: string
           status: Database["public"]["Enums"]["appointment_status"]
           updated_at: string
@@ -37,6 +38,7 @@ export type Database = {
           id?: string
           payment_method?: Database["public"]["Enums"]["payment_method"]
           price: number
+          service_description?: string | null
           service_id: string
           status?: Database["public"]["Enums"]["appointment_status"]
           updated_at?: string
@@ -50,6 +52,7 @@ export type Database = {
           id?: string
           payment_method?: Database["public"]["Enums"]["payment_method"]
           price?: number
+          service_description?: string | null
           service_id?: string
           status?: Database["public"]["Enums"]["appointment_status"]
           updated_at?: string

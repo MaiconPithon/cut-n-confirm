@@ -15,8 +15,10 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { LogOut, Calendar as CalendarIcon, DollarSign, UserPlus, Home, Settings, Clock, Ban, Trash2, KeyRound, X, Shield, MessageCircle, Pencil } from "lucide-react";
+import { LogOut, Calendar as CalendarIcon, DollarSign, UserPlus, Home, Settings, Clock, Ban, Trash2, KeyRound, X, Shield, MessageCircle, Pencil, Palette } from "lucide-react";
 import { EditAppointmentModal } from "@/components/EditAppointmentModal";
+import { AppearanceTab } from "@/components/AppearanceTab";
+import { useAppearance } from "@/hooks/useAppearance";
 import { cn } from "@/lib/utils";
 import { useBusinessName } from "@/hooks/useBusinessName";
 import type { Tables } from "@/integrations/supabase/types";
@@ -358,7 +360,8 @@ export default function Admin() {
     return <div className="flex min-h-screen items-center justify-center bg-background text-muted-foreground">Verificando acesso...</div>;
   }
 
-  const tabCount = isSuperAdmin ? 5 : 4;
+  const appearanceSettings = useAppearance();
+  const tabCount = isSuperAdmin ? 6 : 4;
 
   return (
     <main className="min-h-screen bg-background p-4 md:p-8">
@@ -379,12 +382,13 @@ export default function Admin() {
         </div>
 
         <Tabs defaultValue="dashboard" className="w-full">
-          <TabsList className={cn("mb-6 grid w-full", tabCount === 5 ? "grid-cols-5" : "grid-cols-4")}>
+          <TabsList className={cn("mb-6 grid w-full", isSuperAdmin ? "grid-cols-6" : "grid-cols-4")}>
             <TabsTrigger value="dashboard">Agendamentos</TabsTrigger>
             <TabsTrigger value="schedule">Agenda</TabsTrigger>
             <TabsTrigger value="services">Serviços</TabsTrigger>
             {isSuperAdmin && <TabsTrigger value="team">Equipe</TabsTrigger>}
-            {isSuperAdmin && <TabsTrigger value="settings">Configurações</TabsTrigger>}
+            {isSuperAdmin && <TabsTrigger value="appearance">Aparência</TabsTrigger>}
+            {isSuperAdmin && <TabsTrigger value="settings">Config</TabsTrigger>}
             {!isSuperAdmin && <TabsTrigger value="team" disabled>Equipe</TabsTrigger>}
           </TabsList>
 
@@ -854,6 +858,13 @@ export default function Admin() {
               </div>
             )}
           </TabsContent>
+
+          {/* ─── TAB: Aparência (Super Admin only) ─── */}
+          {isSuperAdmin && (
+            <TabsContent value="appearance">
+              <AppearanceTab settings={appearanceSettings} />
+            </TabsContent>
+          )}
 
           {/* ─── TAB: Settings (Super Admin only) ─── */}
           {isSuperAdmin && (

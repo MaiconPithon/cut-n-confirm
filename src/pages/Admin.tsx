@@ -50,6 +50,7 @@ export default function Admin() {
   const [newUserPassword, setNewUserPassword] = useState("");
   const [businessNameInput, setBusinessNameInput] = useState("");
   const [slotIntervalInput, setSlotIntervalInput] = useState("30");
+  const [bgImageInput, setBgImageInput] = useState("");
   const { businessName } = useBusinessName();
   const appearanceSettings = useAppearance();
 
@@ -79,17 +80,21 @@ export default function Admin() {
     if (businessName) setBusinessNameInput(businessName);
   }, [businessName]);
 
-  // Fetch slot interval setting
+  // Fetch slot interval and background image settings
   useEffect(() => {
-    const fetchInterval = async () => {
+    const fetchSettings = async () => {
       const { data } = await supabase
         .from("business_settings")
-        .select("value")
-        .eq("key", "slot_interval_minutes")
-        .maybeSingle();
-      if (data?.value) setSlotIntervalInput(data.value);
+        .select("key, value")
+        .in("key", ["slot_interval_minutes", "background_image"]);
+      if (data) {
+        data.forEach((s: any) => {
+          if (s.key === "slot_interval_minutes" && s.value) setSlotIntervalInput(s.value);
+          if (s.key === "background_image") setBgImageInput(s.value || "");
+        });
+      }
     };
-    fetchInterval();
+    fetchSettings();
   }, []);
 
   const { data: appointments, isLoading } = useQuery({
@@ -366,6 +371,31 @@ export default function Admin() {
     }
   };
 
+  const handleSaveBgImage = async () => {
+    try {
+      const { data: existing } = await supabase
+        .from("business_settings")
+        .select("id")
+        .eq("key", "background_image")
+        .maybeSingle();
+      if (existing) {
+        const { error } = await supabase
+          .from("business_settings" as any)
+          .update({ value: bgImageInput.trim() } as any)
+          .eq("key", "background_image");
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from("business_settings" as any)
+          .insert({ key: "background_image", value: bgImageInput.trim() } as any);
+        if (error) throw error;
+      }
+      queryClient.invalidateQueries({ queryKey: ["appearance-settings"] });
+      toast.success("Imagem de fundo atualizada!");
+    } catch (err: any) {
+      toast.error(err.message);
+    }
+  };
   const handleSaveBusinessName = async () => {
     if (!businessNameInput.trim()) {
       toast.error("Nome do estabelecimento não pode ser vazio.");
@@ -969,6 +999,24 @@ export default function Admin() {
                           <Clock className="h-4 w-4" /> Salvar Intervalo
                         </Button>
                       </div>
+                    </div>
+
+                    <div className="border-t border-border pt-4">
+                      <label className="mb-1 block text-sm font-medium text-foreground">Imagem de Fundo (Banner)</label>
+                      <p className="mb-2 text-xs text-muted-foreground">Cole a URL de uma imagem para o fundo do site. Deixe vazio para usar o padrão.</p>
+                      <Input
+                        value={bgImageInput}
+                        onChange={(e) => setBgImageInput(e.target.value)}
+                        placeholder="https://exemplo.com/imagem.jpg"
+                      />
+                      {bgImageInput && (
+                        <div className="mt-2 rounded-lg border border-border overflow-hidden">
+                          <img src={bgImageInput} alt="Preview" className="h-24 w-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                        </div>
+                      )}
+                      <Button onClick={handleSaveBgImage} variant="outline" className="mt-2 gap-2">
+                        <Palette className="h-4 w-4" /> Salvar Imagem
+                      </Button>
                     </div>
                   </div>
                 </CardContent>

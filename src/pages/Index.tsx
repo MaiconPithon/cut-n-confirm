@@ -4,16 +4,18 @@ import { Scissors, Clock, MapPin, Phone } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import logoFal from "@/assets/logo-fal.png";
 import { useBusinessName } from "@/hooks/useBusinessName";
+import { useAppearance } from "@/hooks/useAppearance";
 
 const Index = () => {
   const navigate = useNavigate();
   const { businessName } = useBusinessName();
+  const appearance = useAppearance();
 
   return (
     <main
       className="relative flex min-h-[100dvh] flex-col items-center justify-center overflow-hidden"
       style={{
-        backgroundImage: 'linear-gradient(rgba(10,10,10,0.82), rgba(10,10,10,0.82)), url("/images/site-bg.png")',
+        backgroundImage: `linear-gradient(rgba(10,10,10,0.82), rgba(10,10,10,0.82)), url("${appearance?.background_image || '/images/site-bg.png'}")`,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         backgroundAttachment: 'fixed',

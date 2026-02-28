@@ -13,6 +13,7 @@ import { toast } from "sonner";
 import { format, getDay, isBefore, startOfDay, addDays, isAfter, isToday } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
+import { useAppearance } from "@/hooks/useAppearance";
 
 type Step = "service" | "date" | "time" | "info" | "payment" | "confirm" | "confirmed";
 
@@ -85,6 +86,7 @@ const WHATSAPP_NUMBER = "5571988335001";
 
 export default function Agendar() {
   const navigate = useNavigate();
+  const appearance = useAppearance();
   const [step, setStep] = useState<Step>("service");
   const [selectedServiceIds, setSelectedServiceIds] = useState<Set<string>>(new Set());
   const [selectedDate, setSelectedDate] = useState<Date | undefined>();
@@ -294,7 +296,7 @@ export default function Agendar() {
     <main
       className="relative min-h-screen"
       style={{
-        backgroundImage: 'linear-gradient(rgba(10,10,10,0.82), rgba(10,10,10,0.82)), url("/images/site-bg.png")',
+        backgroundImage: `linear-gradient(rgba(10,10,10,0.82), rgba(10,10,10,0.82)), url("${appearance?.background_image || '/images/site-bg.png'}")`,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         backgroundAttachment: 'fixed',

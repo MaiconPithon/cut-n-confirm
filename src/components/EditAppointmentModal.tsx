@@ -42,13 +42,45 @@ export function EditAppointmentModal({ open, onOpenChange, appointment }: EditAp
   });
 
   useEffect(() => {
-    if (appointment && open) {
-      setSelectedServiceIds(new Set([appointment.service_id]));
-      setCustomItems([]);
+    if (appointment && open && services) {
+      const savedDescription = appointment.service_description || appointment.services?.name || "";
+      const savedPrice = Number(appointment.price);
+      const parts = savedDescription.split(" + ").map((p) => p.trim()).filter(Boolean);
+
+      // Match parts against catalog services by name
+      const matchedIds = new Set<string>();
+      const unmatchedNames: string[] = [];
+      for (const part of parts) {
+        const found = services.find((s) => s.name === part);
+        if (found) {
+          matchedIds.add(found.id);
+        } else {
+          unmatchedNames.push(part);
+        }
+      }
+
+      setSelectedServiceIds(matchedIds);
+
+      // Calculate custom items prices from remainder
+      const catalogTotal = services.filter((s) => matchedIds.has(s.id)).reduce((sum, s) => sum + Number(s.price), 0);
+      const remainder = Math.max(0, savedPrice - catalogTotal);
+
+      if (unmatchedNames.length > 0) {
+        const perItem = Math.round((remainder / unmatchedNames.length) * 100) / 100;
+        setCustomItems(unmatchedNames.map((name, i) => ({
+          name,
+          price: i === unmatchedNames.length - 1
+            ? Math.round((remainder - perItem * (unmatchedNames.length - 1)) * 100) / 100
+            : perItem,
+        })));
+      } else {
+        setCustomItems([]);
+      }
+
       setCustomName("");
       setCustomPrice("");
     }
-  }, [appointment, open]);
+  }, [appointment, open, services]);
 
   const selectedServices = services?.filter((s) => selectedServiceIds.has(s.id)) || [];
   const totalFromServices = selectedServices.reduce((sum, s) => sum + Number(s.price), 0);

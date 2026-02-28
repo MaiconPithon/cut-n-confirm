@@ -9,7 +9,7 @@ import { PixPayment } from "@/components/PixPayment";
 import { ArrowLeft, ChevronRight, Check, MessageCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import { format, getDay, isBefore, startOfDay } from "date-fns";
+import { format, getDay, isBefore, startOfDay, addDays, isAfter, isToday } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 
@@ -112,6 +112,23 @@ export default function Agendar() {
     },
   });
 
+  // Fetch all full-day blocked dates for calendar disabling
+  const { data: allBlockedDates } = useQuery({
+    queryKey: ["blocked_dates_calendar"],
+    queryFn: async () => {
+      const todayStr = format(new Date(), "yyyy-MM-dd");
+      const maxStr = format(addDays(new Date(), 7), "yyyy-MM-dd");
+      const { data, error } = await supabase
+        .from("blocked_slots")
+        .select("blocked_date")
+        .eq("full_day", true)
+        .gte("blocked_date", todayStr)
+        .lte("blocked_date", maxStr);
+      if (error) throw error;
+      return new Set(data.map((b) => b.blocked_date));
+    },
+  });
+
   const createAppointment = useMutation({
     mutationFn: async () => {
       const { data, error } = await supabase
@@ -153,11 +170,17 @@ export default function Agendar() {
   const dayConfig = scheduleConfig?.find((c) => c.day_of_week === selectedDow);
   const timeSlots = generateTimeSlots(dayConfig?.open_time?.slice(0, 5), dayConfig?.close_time?.slice(0, 5));
 
+  const maxDate = addDays(startOfDay(new Date()), 7);
+
   const disabledDays = (date: Date) => {
     if (isBefore(date, startOfDay(new Date()))) return true;
+    if (isAfter(date, maxDate)) return true;
     const dow = getDay(date);
     const config = scheduleConfig?.find((c) => c.day_of_week === dow);
-    return !config?.is_open;
+    if (!config?.is_open) return true;
+    const dateStr = format(date, "yyyy-MM-dd");
+    if (allBlockedDates?.has(dateStr)) return true;
+    return false;
   };
 
   const currentStepIndex = STEPS.indexOf(step === "confirmed" ? "confirm" : step);
@@ -291,7 +314,13 @@ export default function Agendar() {
                   const duration = selectedService?.duration_minutes ?? 30;
                   const buffer = selectedService?.buffer_minutes ?? 5;
                   const inBreak = overlapsBreak(t, duration, buffer, (dayConfig as any)?.break_start, (dayConfig as any)?.break_end);
-                  const taken = bookedTimes.has(t) || blockedTimes.has(t) || inBreak;
+                  // Block past times if selected date is today
+                  const isPast = selectedDate && isToday(selectedDate) && (() => {
+                    const [h, m] = t.split(":").map(Number);
+                    const now = new Date();
+                    return h < now.getHours() || (h === now.getHours() && m <= now.getMinutes());
+                  })();
+                  const taken = bookedTimes.has(t) || blockedTimes.has(t) || inBreak || !!isPast;
                   return (
                     <button
                       key={t}

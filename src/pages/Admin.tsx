@@ -15,7 +15,8 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { LogOut, Calendar as CalendarIcon, DollarSign, UserPlus, Home, Settings, Clock, Ban, Trash2, KeyRound, X, Shield, MessageCircle } from "lucide-react";
+import { LogOut, Calendar as CalendarIcon, DollarSign, UserPlus, Home, Settings, Clock, Ban, Trash2, KeyRound, X, Shield, MessageCircle, Pencil } from "lucide-react";
+import { EditAppointmentModal } from "@/components/EditAppointmentModal";
 import { cn } from "@/lib/utils";
 import { useBusinessName } from "@/hooks/useBusinessName";
 import type { Tables } from "@/integrations/supabase/types";
@@ -42,6 +43,7 @@ export default function Admin() {
   const [blockDate, setBlockDate] = useState<Date | undefined>();
   const [blockReason, setBlockReason] = useState("");
   const [filterDate, setFilterDate] = useState<Date | undefined>();
+  const [editingAppointment, setEditingAppointment] = useState<Appointment | null>(null);
   const [editingPasswordId, setEditingPasswordId] = useState<string | null>(null);
   const [newUserPassword, setNewUserPassword] = useState("");
   const [businessNameInput, setBusinessNameInput] = useState("");
@@ -517,6 +519,15 @@ export default function Admin() {
                               <Button
                                 variant="ghost"
                                 size="icon"
+                                onClick={() => setEditingAppointment(a)}
+                                className="h-8 w-8 text-primary hover:text-primary/80"
+                                title="Editar serviços"
+                              >
+                                <Pencil className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
                                 onClick={() => {
                                   if (confirm("Excluir este agendamento?")) {
                                     deleteAppointment.mutate(a.id);
@@ -877,6 +888,12 @@ export default function Admin() {
           )}
         </Tabs>
       </div>
+
+      <EditAppointmentModal
+        open={!!editingAppointment}
+        onOpenChange={(open) => { if (!open) setEditingAppointment(null); }}
+        appointment={editingAppointment}
+      />
     </main>
   );
 }

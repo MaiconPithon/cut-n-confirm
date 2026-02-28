@@ -18,6 +18,7 @@ import { ptBR } from "date-fns/locale";
 import { LogOut, Calendar as CalendarIcon, DollarSign, UserPlus, Home, Settings, Clock, Ban, Trash2, KeyRound, X, Shield, MessageCircle, Pencil, Palette } from "lucide-react";
 import { EditAppointmentModal } from "@/components/EditAppointmentModal";
 import { AppearanceTab } from "@/components/AppearanceTab";
+import { ImageUpload } from "@/components/ImageUpload";
 import { useAppearance } from "@/hooks/useAppearance";
 import { cn } from "@/lib/utils";
 import { useBusinessName } from "@/hooks/useBusinessName";
@@ -50,7 +51,6 @@ export default function Admin() {
   const [newUserPassword, setNewUserPassword] = useState("");
   const [businessNameInput, setBusinessNameInput] = useState("");
   const [slotIntervalInput, setSlotIntervalInput] = useState("30");
-  const [bgImageInput, setBgImageInput] = useState("");
   const { businessName } = useBusinessName();
   const appearanceSettings = useAppearance();
 
@@ -86,11 +86,10 @@ export default function Admin() {
       const { data } = await supabase
         .from("business_settings")
         .select("key, value")
-        .in("key", ["slot_interval_minutes", "background_image"]);
+        .in("key", ["slot_interval_minutes"]);
       if (data) {
         data.forEach((s: any) => {
           if (s.key === "slot_interval_minutes" && s.value) setSlotIntervalInput(s.value);
-          if (s.key === "background_image") setBgImageInput(s.value || "");
         });
       }
     };
@@ -371,31 +370,6 @@ export default function Admin() {
     }
   };
 
-  const handleSaveBgImage = async () => {
-    try {
-      const { data: existing } = await supabase
-        .from("business_settings")
-        .select("id")
-        .eq("key", "background_image")
-        .maybeSingle();
-      if (existing) {
-        const { error } = await supabase
-          .from("business_settings" as any)
-          .update({ value: bgImageInput.trim() } as any)
-          .eq("key", "background_image");
-        if (error) throw error;
-      } else {
-        const { error } = await supabase
-          .from("business_settings" as any)
-          .insert({ key: "background_image", value: bgImageInput.trim() } as any);
-        if (error) throw error;
-      }
-      queryClient.invalidateQueries({ queryKey: ["appearance-settings"] });
-      toast.success("Imagem de fundo atualizada!");
-    } catch (err: any) {
-      toast.error(err.message);
-    }
-  };
   const handleSaveBusinessName = async () => {
     if (!businessNameInput.trim()) {
       toast.error("Nome do estabelecimento não pode ser vazio.");
@@ -1002,21 +976,44 @@ export default function Admin() {
                     </div>
 
                     <div className="border-t border-border pt-4">
-                      <label className="mb-1 block text-sm font-medium text-foreground">Imagem de Fundo (Banner)</label>
-                      <p className="mb-2 text-xs text-muted-foreground">Cole a URL de uma imagem para o fundo do site. Deixe vazio para usar o padrão.</p>
-                      <Input
-                        value={bgImageInput}
-                        onChange={(e) => setBgImageInput(e.target.value)}
-                        placeholder="https://exemplo.com/imagem.jpg"
+                      <ImageUpload
+                        label="Logo da Barbearia"
+                        hint="Envie a logo que aparecerá na página inicial. Recomendado: PNG com fundo transparente."
+                        currentUrl={appearanceSettings?.logo_image || ""}
+                        storagePath="logo"
+                        previewClass="h-24 w-auto object-contain mx-auto"
+                        onUploaded={async (url) => {
+                          try {
+                            const { data: existing } = await supabase.from("business_settings").select("id").eq("key", "logo_image").maybeSingle();
+                            if (existing) {
+                              await supabase.from("business_settings" as any).update({ value: url } as any).eq("key", "logo_image");
+                            } else {
+                              await supabase.from("business_settings" as any).insert({ key: "logo_image", value: url } as any);
+                            }
+                            queryClient.invalidateQueries({ queryKey: ["appearance-settings"] });
+                          } catch (err: any) { toast.error(err.message); }
+                        }}
                       />
-                      {bgImageInput && (
-                        <div className="mt-2 rounded-lg border border-border overflow-hidden">
-                          <img src={bgImageInput} alt="Preview" className="h-24 w-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
-                        </div>
-                      )}
-                      <Button onClick={handleSaveBgImage} variant="outline" className="mt-2 gap-2">
-                        <Palette className="h-4 w-4" /> Salvar Imagem
-                      </Button>
+                    </div>
+
+                    <div className="border-t border-border pt-4">
+                      <ImageUpload
+                        label="Imagem de Fundo (Banner)"
+                        hint="Envie a imagem de fundo do site. Recomendado: imagem escura, paisagem (1920×1080)."
+                        currentUrl={appearanceSettings?.background_image || ""}
+                        storagePath="background"
+                        onUploaded={async (url) => {
+                          try {
+                            const { data: existing } = await supabase.from("business_settings").select("id").eq("key", "background_image").maybeSingle();
+                            if (existing) {
+                              await supabase.from("business_settings" as any).update({ value: url } as any).eq("key", "background_image");
+                            } else {
+                              await supabase.from("business_settings" as any).insert({ key: "background_image", value: url } as any);
+                            }
+                            queryClient.invalidateQueries({ queryKey: ["appearance-settings"] });
+                          } catch (err: any) { toast.error(err.message); }
+                        }}
+                      />
                     </div>
                   </div>
                 </CardContent>

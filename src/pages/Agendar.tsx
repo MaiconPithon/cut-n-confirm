@@ -45,7 +45,7 @@ const overlapsBreak = (
   if (!breakStart || !breakEnd) return false;
   const [sh, sm] = slotTime.split(":").map(Number);
   const slotStart = sh * 60 + sm;
-  const slotEnd = slotStart + durationMinutes + bufferMinutes;
+  const slotEnd = slotStart + durationMinutes;
   const [bsh, bsm] = breakStart.split(":").map(Number);
   const [beh, bem] = breakEnd.split(":").map(Number);
   const bStart = bsh * 60 + bsm;
@@ -62,7 +62,7 @@ const overlapsExisting = (
 ): boolean => {
   const [sh, sm] = slotTime.split(":").map(Number);
   const slotStart = sh * 60 + sm;
-  const slotEnd = slotStart + totalDuration + totalBuffer;
+  const slotEnd = slotStart + totalDuration;
 
   for (const appt of bookedAppointments) {
     const [ah, am] = appt.appointment_time.split(":").map(Number);
@@ -110,9 +110,9 @@ export default function Agendar() {
       const dateStr = format(selectedDate!, "yyyy-MM-dd");
       const { data, error } = await supabase
         .from("appointments")
-        .select("appointment_time, service_id, services(duration_minutes, buffer_minutes)")
+        .select("appointment_time, service_id, status, services(duration_minutes, buffer_minutes)")
         .eq("appointment_date", dateStr)
-        .neq("status", "cancelado");
+        .in("status", ["pendente", "confirmado"]);
       if (error) throw error;
       return data;
     },

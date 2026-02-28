@@ -23,7 +23,7 @@ import { cn } from "@/lib/utils";
 import { useBusinessName } from "@/hooks/useBusinessName";
 import type { Tables } from "@/integrations/supabase/types";
 
-type Appointment = Tables<"appointments"> & { services: { name: string } | null };
+type Appointment = Tables<"appointments"> & { services: { name: string; duration_minutes: number; buffer_minutes: number } | null };
 
 const DAY_NAMES = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
 
@@ -84,7 +84,7 @@ export default function Admin() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("appointments")
-        .select("*, services(name)")
+        .select("*, services(name, duration_minutes, buffer_minutes)")
         .order("appointment_date", { ascending: false })
         .order("appointment_time", { ascending: true });
       if (error) throw error;
@@ -491,7 +491,10 @@ export default function Admin() {
                             <TableCell className="text-foreground">{a.appointment_time.slice(0, 5)}</TableCell>
                             <TableCell className="text-foreground">{a.client_name}</TableCell>
                             <TableCell className="text-foreground">{a.client_phone}</TableCell>
-                            <TableCell className="text-foreground">{(a as any).service_description || a.services?.name}</TableCell>
+                            <TableCell className="text-foreground">
+                              <div>{(a as any).service_description || a.services?.name}</div>
+                              <div className="text-xs text-muted-foreground">{a.services?.duration_minutes ?? 30} min</div>
+                            </TableCell>
                             <TableCell className="text-primary font-semibold">R$ {Number(a.price).toFixed(2).replace(".", ",")}</TableCell>
                             <TableCell className="text-foreground capitalize">{a.payment_method}</TableCell>
                             <TableCell>

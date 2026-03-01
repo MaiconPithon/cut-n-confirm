@@ -393,18 +393,25 @@ export default function Admin() {
     ? appointments?.filter((a) => a.appointment_date === format(filterDate, "yyyy-MM-dd"))
     : appointments;
 
-  const formatPhoneForWhatsApp = (phone: string) => {
-    if (!phone) return "";
-    const digits = phone.replace(/\D/g, "");
-    return digits.startsWith("55") ? digits : `55${digits}`;
-  };
+  const openWhatsApp = (phone: string, clientName: string, appointmentTime: string, serviceName: string = "corte") => {
+    if (!phone) return;
+    let cleanPhone = phone.replace(/\D/g, "");
 
-  const buildReminderUrl = (a: Appointment) => {
-    const phone = formatPhoneForWhatsApp(a.client_phone);
-    const time = a.appointment_time.slice(0, 5);
-    const service = a.services?.name || "corte";
-    const msg = `_Olá, ${a.client_name}! Passando para lembrar do seu agendamento de 💇🏽‍♂️ ${service}_ *hoje às ${time}*⌚ -> 💈 _${businessName}_ 💈. *Te aguardamos* !`;
-    return `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`;
+    // Se o número tem 11 dígitos (DDD + 9 + 8 números), removemos o 9 para evitar o bug da API
+    if (cleanPhone.length === 11 && cleanPhone[2] === "9") {
+      cleanPhone = cleanPhone.substring(0, 2) + cleanPhone.substring(3);
+    }
+
+    // Adiciona o 55 do Brasil se não tiver
+    if (!cleanPhone.startsWith("55")) {
+      cleanPhone = "55" + cleanPhone;
+    }
+
+    const time = appointmentTime.slice(0, 5);
+    const service = serviceName || "corte";
+    const message = `_Olá, ${clientName}! Passando para confirmar seu agendamento de 💇🏽‍♂️ ${service}_ *hoje às ${time}*⌚ -> 💈 _${businessName}_ 💈. *Te aguardamos* !`;
+    const url = `https://api.whatsapp.com/send?phone=${cleanPhone}&text=${encodeURIComponent(message)}`;
+    window.open(url, "_blank");
   };
 
   const todayStr = format(new Date(), "yyyy-MM-dd");
@@ -569,16 +576,15 @@ export default function Admin() {
                               </Select>
                             </TableCell>
                             <TableCell className="flex gap-1">
-                              <a
-                                href={buildReminderUrl(a)}
-                                target="_blank"
-                                rel="noopener noreferrer"
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 text-green-500 hover:text-green-400"
                                 title="Enviar lembrete via WhatsApp"
+                                onClick={() => openWhatsApp(a.client_phone, a.client_name, a.appointment_time, a.services?.name || "")}
                               >
-                                <Button variant="ghost" size="icon" className="h-8 w-8 text-green-500 hover:text-green-400">
-                                  <MessageCircle className="h-4 w-4" />
-                                </Button>
-                              </a>
+                                <MessageCircle className="h-4 w-4" />
+                              </Button>
                               <Button
                                 variant="ghost"
                                 size="icon"

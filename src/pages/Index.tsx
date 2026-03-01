@@ -65,13 +65,6 @@ const Index = () => {
           )}
         </h1>
 
-        {reviewsData && reviewsData.total > 0 && (
-          <div className="mb-4 flex items-center gap-2 rounded-full border border-white/10 bg-black/40 px-4 py-1.5 backdrop-blur-md">
-            <Star className="h-4 w-4 fill-yellow-500 text-yellow-500" />
-            <span className="font-bold text-white text-sm sm:text-base">Nota {reviewsData.average}</span>
-            <span className="text-muted-foreground text-xs sm:text-sm">({reviewsData.total} {reviewsData.total === 1 ? 'avaliação' : 'avaliações'})</span>
-          </div>
-        )}
 
         <p className="mb-1 text-base tracking-[0.25em] uppercase text-muted-foreground sm:text-lg">
           Estilo & Atitude
@@ -116,6 +109,14 @@ const Index = () => {
           Desenvolvido por Michael Pithon
         </span>
       </footer>
+
+      {reviewsData && reviewsData.total > 0 && (
+        <div className="fixed bottom-20 right-4 z-50 flex items-center gap-1.5 rounded-full border border-white/10 bg-black/60 px-3 py-1.5 backdrop-blur-md shadow-lg">
+          <Star className="h-3.5 w-3.5 fill-yellow-500 text-yellow-500" />
+          <span className="font-bold text-white text-xs">{reviewsData.average}</span>
+          <span className="text-muted-foreground text-[10px]">({reviewsData.total})</span>
+        </div>
+      )}
 
       <WhatsAppButton />
     </main>

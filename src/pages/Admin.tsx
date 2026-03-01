@@ -15,7 +15,7 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { LogOut, Calendar as CalendarIcon, DollarSign, UserPlus, Home, Settings, Clock, Ban, Trash2, KeyRound, X, Shield, MessageCircle, Pencil, Palette } from "lucide-react";
+import { LogOut, Calendar as CalendarIcon, DollarSign, UserPlus, Home, Settings, Clock, Ban, Trash2, KeyRound, X, Shield, MessageCircle, Pencil, Palette, Star } from "lucide-react";
 import { EditAppointmentModal } from "@/components/EditAppointmentModal";
 import { AppearanceTab } from "@/components/AppearanceTab";
 import { ImageUpload } from "@/components/ImageUpload";
@@ -414,6 +414,19 @@ export default function Admin() {
     window.open(url, '_blank');
   };
 
+  const { data: reviewsData } = useQuery({
+    queryKey: ["admin-avaliacoes"],
+    enabled: isAdmin === true,
+    queryFn: async () => {
+      const { data, error } = await supabase.from("avaliacoes").select("estrelas");
+      if (error) { console.error(error); return { average: 0, total: 0 }; }
+      if (!data || data.length === 0) return { average: 0, total: 0 };
+      const total = data.length;
+      const sum = data.reduce((acc, curr) => acc + (curr.estrelas || 0), 0);
+      return { average: Number((sum / total).toFixed(1)), total };
+    },
+  });
+
   const todayStr = format(new Date(), "yyyy-MM-dd");
   const todayTotal = appointments?.filter((a) => a.appointment_date === todayStr && a.status !== "cancelado").reduce((sum, a) => sum + Number(a.price), 0) || 0;
   const todayCount = appointments?.filter((a) => a.appointment_date === todayStr && a.status !== "cancelado").length || 0;
@@ -457,7 +470,7 @@ export default function Admin() {
 
           {/* ─── TAB: Dashboard ─── */}
           <TabsContent value="dashboard">
-            <div className="mb-6 grid grid-cols-2 gap-4 md:grid-cols-4">
+            <div className="mb-6 grid grid-cols-2 gap-4 md:grid-cols-5">
               <Card className="border-border bg-card">
                 <CardContent className="flex items-center gap-3 pt-6">
                   <CalendarIcon className="h-8 w-8 text-primary" />
@@ -491,6 +504,15 @@ export default function Admin() {
                   <div>
                     <p className="text-2xl font-bold text-foreground">R$ {totalGeral.toFixed(2).replace(".", ",")}</p>
                     <p className="text-xs text-muted-foreground">Total geral</p>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card className="border-border bg-card">
+                <CardContent className="flex items-center gap-3 pt-6">
+                  <Star className="h-8 w-8 fill-yellow-500 text-yellow-500" />
+                  <div>
+                    <p className="text-2xl font-bold text-foreground">{reviewsData?.average || "—"}</p>
+                    <p className="text-xs text-muted-foreground">Média ({reviewsData?.total || 0} aval.)</p>
                   </div>
                 </CardContent>
               </Card>

@@ -394,6 +394,7 @@ export default function Admin() {
     : appointments;
 
   const formatPhoneForWhatsApp = (phone: string) => {
+    if (!phone) return "";
     const digits = phone.replace(/\D/g, "");
     return digits.startsWith("55") ? digits : `55${digits}`;
   };

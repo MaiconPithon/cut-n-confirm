@@ -94,7 +94,7 @@ export default function Agendar() {
   const [clientName, setClientName] = useState("");
   const [clientPhone, setClientPhone] = useState("");
   const [paymentMethod, setPaymentMethod] = useState<"pix" | "dinheiro">("pix");
-  
+
   // Rating states
   const [hoveredRating, setHoveredRating] = useState(0);
   const [submittedRating, setSubmittedRating] = useState(false);
@@ -260,14 +260,15 @@ export default function Agendar() {
       const { error } = await supabase
         .from("avaliacoes")
         .insert({
-          nome_cliente: clientName,
+          nome_cliente: clientName?.trim() || "Cliente",
           estrelas: stars
         });
-        
+
       if (error) throw error;
     },
     onSuccess: () => {
       setSubmittedRating(true);
+      setHoveredRating(0);
       toast.success("Obrigado por avaliar o Fal!");
     },
     onError: () => {
@@ -593,7 +594,7 @@ export default function Agendar() {
                 Enviar confirmação via WhatsApp
               </Button>
             </a>
-            
+
             {!submittedRating ? (
               <div className="mb-6 rounded-lg border border-border bg-card p-5 text-center transition-all">
                 <h3 className="mb-3 text-lg font-bold text-foreground">Avalie sua Experiência</h3>
@@ -610,8 +611,8 @@ export default function Agendar() {
                       <Star
                         className={cn(
                           "h-10 w-10 transition-colors",
-                          (hoveredRating >= star) 
-                            ? "fill-yellow-500 text-yellow-500" 
+                          (hoveredRating >= star)
+                            ? "fill-yellow-500 text-yellow-500"
                             : "text-muted-foreground/30"
                         )}
                       />
@@ -625,7 +626,7 @@ export default function Agendar() {
                 <p className="text-primary font-medium">Avaliação recebida! Muito obrigado. ⭐</p>
               </div>
             )}
-            
+
             <Button variant="outline" className="w-full" onClick={() => navigate("/")}>
               Voltar ao início
             </Button>

@@ -393,7 +393,7 @@ export default function Admin() {
     ? appointments?.filter((a) => a.appointment_date === format(filterDate, "yyyy-MM-dd"))
     : appointments;
 
-  const openWhatsApp = (phone: string, clientName: string, appointmentTime: string, serviceName: string = "corte") => {
+  const openWhatsApp = (phone: string, clientName: string) => {
     if (!phone) return;
     let cleanPhone = phone.replace(/\D/g, "");
 
@@ -407,10 +407,8 @@ export default function Admin() {
       cleanPhone = "55" + cleanPhone;
     }
 
-    const time = appointmentTime.slice(0, 5);
-    const service = serviceName || "corte";
-    const message = `_Olá, ${clientName}! Passando para confirmar seu agendamento de 💇🏽‍♂️ ${service}_ *hoje às ${time}*⌚ -> 💈 _${businessName}_ 💈. *Te aguardamos* !`;
-    const url = `https://api.whatsapp.com/send?phone=${cleanPhone}&text=${encodeURIComponent(message)}`;
+    const message = encodeURIComponent(`Olá, ${clientName}! Passando para confirmar seu agendamento.`);
+    const url = `https://api.whatsapp.com/send?phone=${cleanPhone}&text=${message}`;
     window.open(url, "_blank");
   };
 
@@ -581,7 +579,7 @@ export default function Admin() {
                                 size="icon"
                                 className="h-8 w-8 text-green-500 hover:text-green-400"
                                 title="Enviar lembrete via WhatsApp"
-                                onClick={() => openWhatsApp(a.client_phone, a.client_name, a.appointment_time, a.services?.name || "")}
+                                onClick={() => openWhatsApp(a.client_phone, a.client_name)}
                               >
                                 <MessageCircle className="h-4 w-4" />
                               </Button>

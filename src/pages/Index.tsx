@@ -1,6 +1,8 @@
 import { Button } from "@/components/ui/button";
 import { WhatsAppButton } from "@/components/WhatsAppButton";
-import { Scissors, Clock, MapPin, Phone } from "lucide-react";
+import { Scissors, Clock, MapPin, Phone, Star } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import logoFalFallback from "@/assets/logo-fal.png";
 import { useBusinessName } from "@/hooks/useBusinessName";
@@ -10,6 +12,29 @@ const Index = () => {
   const navigate = useNavigate();
   const { businessName } = useBusinessName();
   const appearance = useAppearance();
+
+  const { data: reviewsData } = useQuery({
+    queryKey: ["avaliacoes_resumo"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("avaliacoes")
+        .select("estrelas");
+
+      if (error) {
+        console.error("Erro ao buscar avaliações:", error);
+        return { average: 0, total: 0 };
+      }
+
+      if (!data || data.length === 0) return { average: 0, total: 0 };
+
+      const total = data.length;
+      const sum = data.reduce((acc, curr) => acc + (curr.estrelas || 0), 0);
+      return {
+        average: Number((sum / total).toFixed(1)),
+        total
+      };
+    }
+  });
 
   return (
     <main
@@ -39,6 +64,15 @@ const Index = () => {
             i === arr.length - 1 ? <span key={i} className="text-green-700">{word}</span> : <span key={i}>{word} </span>
           )}
         </h1>
+
+        {reviewsData && reviewsData.total > 0 && (
+          <div className="mb-4 flex items-center gap-2 rounded-full border border-white/10 bg-black/40 px-4 py-1.5 backdrop-blur-md">
+            <Star className="h-4 w-4 fill-yellow-500 text-yellow-500" />
+            <span className="font-bold text-white text-sm sm:text-base">Nota {reviewsData.average}</span>
+            <span className="text-muted-foreground text-xs sm:text-sm">({reviewsData.total} {reviewsData.total === 1 ? 'avaliação' : 'avaliações'})</span>
+          </div>
+        )}
+
         <p className="mb-1 text-base tracking-[0.25em] uppercase text-muted-foreground sm:text-lg">
           Estilo & Atitude
         </p>

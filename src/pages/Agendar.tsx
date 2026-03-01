@@ -7,7 +7,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Checkbox } from "@/components/ui/checkbox";
 import { WhatsAppButton } from "@/components/WhatsAppButton";
 import { PixPayment } from "@/components/PixPayment";
-import { ArrowLeft, ChevronRight, Check, MessageCircle } from "lucide-react";
+import { ArrowLeft, ChevronRight, Check, MessageCircle, Star } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { format, getDay, isBefore, startOfDay, addDays, isAfter, isToday } from "date-fns";
@@ -94,6 +94,10 @@ export default function Agendar() {
   const [clientName, setClientName] = useState("");
   const [clientPhone, setClientPhone] = useState("");
   const [paymentMethod, setPaymentMethod] = useState<"pix" | "dinheiro">("pix");
+  
+  // Rating states
+  const [hoveredRating, setHoveredRating] = useState(0);
+  const [submittedRating, setSubmittedRating] = useState(false);
 
   const { data: services } = useQuery({
     queryKey: ["services"],
@@ -249,6 +253,26 @@ export default function Agendar() {
     onError: () => {
       toast.error("Erro ao agendar. Tente novamente.");
     },
+  });
+
+  const submitRating = useMutation({
+    mutationFn: async (stars: number) => {
+      const { error } = await supabase
+        .from("avaliacoes")
+        .insert({
+          nome_cliente: clientName,
+          estrelas: stars
+        });
+        
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      setSubmittedRating(true);
+      toast.success("Obrigado por avaliar o Fal!");
+    },
+    onError: () => {
+      toast.error("Houve um erro ao enviar sua avaliação.");
+    }
   });
 
   const currentStepIndex = STEPS.indexOf(step === "confirmed" ? "confirm" : step);
@@ -563,12 +587,45 @@ export default function Agendar() {
                 <p className="text-sm"><span className="text-muted-foreground">Total:</span> <span className="font-bold text-primary">R$ {totalPrice.toFixed(2).replace(".", ",")}</span></p>
               </div>
             </div>
-            <a href={whatsappMessage()} target="_blank" rel="noopener noreferrer" className="block mb-3">
+            <a href={whatsappMessage()} target="_blank" rel="noopener noreferrer" className="block mb-6">
               <Button className="w-full gap-2 bg-[hsl(142,70%,45%)] hover:bg-[hsl(142,70%,40%)] text-foreground">
                 <MessageCircle className="h-5 w-5" />
                 Enviar confirmação via WhatsApp
               </Button>
             </a>
+            
+            {!submittedRating ? (
+              <div className="mb-6 rounded-lg border border-border bg-card p-5 text-center transition-all">
+                <h3 className="mb-3 text-lg font-bold text-foreground">Avalie sua Experiência</h3>
+                <div className="flex justify-center gap-2">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <button
+                      key={star}
+                      disabled={submitRating.isPending}
+                      onMouseEnter={() => setHoveredRating(star)}
+                      onMouseLeave={() => setHoveredRating(0)}
+                      onClick={() => submitRating.mutate(star)}
+                      className="transition-transform hover:scale-110 focus:outline-none"
+                    >
+                      <Star
+                        className={cn(
+                          "h-10 w-10 transition-colors",
+                          (hoveredRating >= star) 
+                            ? "fill-yellow-500 text-yellow-500" 
+                            : "text-muted-foreground/30"
+                        )}
+                      />
+                    </button>
+                  ))}
+                </div>
+                {submitRating.isPending && <p className="mt-2 text-sm text-muted-foreground">Enviando...</p>}
+              </div>
+            ) : (
+              <div className="mb-6 rounded-lg border border-primary/30 bg-primary/5 p-4 text-center">
+                <p className="text-primary font-medium">Avaliação recebida! Muito obrigado. ⭐</p>
+              </div>
+            )}
+            
             <Button variant="outline" className="w-full" onClick={() => navigate("/")}>
               Voltar ao início
             </Button>

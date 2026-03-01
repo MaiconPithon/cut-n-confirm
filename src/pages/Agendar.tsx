@@ -405,7 +405,7 @@ export default function Agendar() {
                   // Check overlap with existing booked appointments
                   const overlapsBooked = overlapsExisting(t, duration, buffer, bookedAppointments);
                   const taken = overlapsBooked || blockedTimes.has(t) || inBreak || !!isPast;
-                  
+
                   // Check if slot + duration fits within closing time
                   const [sh, sm] = t.split(":").map(Number);
                   const slotEnd = sh * 60 + sm + duration;
@@ -423,8 +423,8 @@ export default function Agendar() {
                         taken || exceedsClose
                           ? "cursor-not-allowed border-border bg-muted/20 text-muted-foreground line-through"
                           : selectedTime === t
-                          ? "border-primary bg-primary text-primary-foreground"
-                          : "border-border bg-secondary text-foreground hover:border-primary"
+                            ? "border-primary bg-primary text-primary-foreground"
+                            : "border-border bg-secondary text-foreground hover:border-primary"
                       )}
                     >
                       {t}
@@ -574,6 +574,12 @@ export default function Agendar() {
             </Button>
           </div>
         )}
+      </div>
+
+      <div className="w-full py-4 flex justify-center pb-24">
+        <span className="text-[10px] text-muted-foreground/40 font-medium z-0">
+          Desenvolvido por Michael Pithon
+        </span>
       </div>
 
       {/* Bottom continue button (fixed) */}

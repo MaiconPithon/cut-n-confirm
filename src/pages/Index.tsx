@@ -71,14 +71,16 @@ const Index = () => {
         </div>
       </div>
 
-      {/* Footer */}
-      <footer className="absolute bottom-4 z-10">
+      <footer className="absolute bottom-4 z-10 w-full flex flex-col items-center">
         <button
           onClick={() => navigate("/admin-login")}
-          className="text-[10px] text-muted-foreground/30 transition-colors hover:text-green-700"
+          className="text-[10px] text-muted-foreground/30 transition-colors hover:text-green-700 mb-2"
         >
           Área do Barbeiro
         </button>
+        <span className="text-[10px] text-muted-foreground/40 font-medium">
+          Desenvolvido por Michael Pithon
+        </span>
       </footer>
 
       <WhatsAppButton />

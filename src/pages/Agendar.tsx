@@ -257,12 +257,14 @@ export default function Agendar() {
 
   const submitRating = useMutation({
     mutationFn: async (stars: number) => {
+      const payload = {
+        nome_cliente: clientName,
+        estrelas: stars
+      };
+
       const { error } = await supabase
         .from("avaliacoes")
-        .insert({
-          nome_cliente: clientName?.trim() || "Cliente",
-          estrelas: stars
-        });
+        .insert([payload]);
 
       if (error) throw error;
     },

@@ -34,9 +34,9 @@ const Index = () => {
         </div>
 
         {/* Title */}
-        <h1 className="mb-2 text-4xl font-bold uppercase tracking-widest text-foreground sm:text-5xl md:text-6xl flex items-center justify-center flex-wrap gap-x-3">
+        <h1 className="mb-2 text-4xl font-bold uppercase tracking-widest text-foreground sm:text-5xl md:text-6xl">
           {businessName.split(" ").map((word, i, arr) =>
-            i === arr.length - 1 ? <span key={i} className="text-green-700 flex items-center gap-2">{word} <span className="text-4xl sm:text-5xl md:text-6xl -mt-1">💈</span></span> : <span key={i}>{word}</span>
+            i === arr.length - 1 ? <span key={i} className="text-green-700">{word}</span> : <span key={i}>{word} </span>
           )}
         </h1>
         <p className="mb-1 text-base tracking-[0.25em] uppercase text-muted-foreground sm:text-lg">

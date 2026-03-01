@@ -395,19 +395,23 @@ export default function Admin() {
 
   const openWhatsApp = (phone: string, clientName: string) => {
     if (!phone) return;
-    // 1. Apenas limpa caracteres não numéricos. NÃO remove o 9º dígito.
+    // 1. Limpa espaços e traços, confiando no número exato que o cliente digitou
     let cleanPhone = phone.replace(/\D/g, '');
 
-    // 2. Garante o DDI do Brasil
+    // 2. Garante que tem o 55 do Brasil na frente
     if (!cleanPhone.startsWith('55')) {
       cleanPhone = '55' + cleanPhone;
     }
 
+    // 3. Monta a string limpa preservando os emojis perfeitamente
     const time = appointmentTime.slice(0, 5);
     const service = serviceName || "corte";
-    const message = `_Olá, ${clientName}! Passando para confirmar seu agendamento de 💇🏽‍♂️ ${service}_ *hoje às ${time}*⌚ -> 💈 _${businessName}_ 💈. *Te aguardamos* !`;
-    const url = `https://api.whatsapp.com/send?phone=${cleanPhone}&text=${encodeURIComponent(message)}`;
-    window.open(url, "_blank");
+    const textMessage = `Ol\u00e1, ${clientName} ! Passando para confirmar seu agendamento de \uD83D\uDC87\uD83C\uDFFD\u200D\u2642\uFE0F ${service} hoje \u00e0s ${time}\u231A -> \uD83D\uDC88 \uD835\uDD2D\uD835\uDD1E\uD835\uDD2F\uD835\uDD1F\uD835\uDD22\uD835\uDD1E\uD835\uDD2F\uD835\uDD26\uD835\uDD1E \uD835\uDD07\uD835\uDD2C \uD835\uDD09\uD835\uDD1E\uD835\uDD29 \uD83D\uDC88. Te aguardamos !`;
+
+    // 4. Codifica a URL de forma segura
+    const encodedMessage = encodeURIComponent(textMessage);
+    const url = `https://api.whatsapp.com/send?phone=${cleanPhone}&text=${encodedMessage}`;
+    window.open(url, '_blank');
   };
 
   const todayStr = format(new Date(), "yyyy-MM-dd");

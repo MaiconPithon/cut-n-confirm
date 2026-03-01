@@ -395,24 +395,23 @@ export default function Admin() {
 
   const openWhatsApp = (phone: string, clientName: string, appointmentTime: string, serviceName: string = "corte") => {
     if (!phone) return;
-    // 1. Limpeza absoluta: remove tudo que não for dígito
-    let cleanPhone = phone.replace(/\D/g, "");
+    // 1. Apenas limpa caracteres não numéricos. NÃO remove o 9º dígito.
+    let cleanPhone = phone.replace(/\D/g, '');
 
-    // 2. Remove o 9º dígito: se tem 11 dígitos (DDD + 9 + 8 números), remove o 9 após o DDD
-    if (cleanPhone.length === 11 && cleanPhone[2] === "9") {
-      cleanPhone = cleanPhone.substring(0, 2) + cleanPhone.substring(3);
+    // 2. Garante o DDI do Brasil
+    if (!cleanPhone.startsWith('55')) {
+      cleanPhone = '55' + cleanPhone;
     }
 
-    // 3. Garante o código do Brasil
-    if (!cleanPhone.startsWith("55")) {
-      cleanPhone = "55" + cleanPhone;
-    }
-
+    // 3. Monta a string limpa preservando os emojis perfeitamente
     const time = appointmentTime.slice(0, 5);
     const service = serviceName || "corte";
-    const message = `Olá, ${clientName} ! Passando para confirmar seu agendamento de 💇🏽‍♂️ ${service} hoje às ${time}⌚ -> 💈 𝕭𝖆𝖗𝖇𝖊𝖆𝖗𝖎𝖆 𝕯𝖔 𝕱𝖆𝖑 💈. Te aguardamos !`;
-    const url = `https://api.whatsapp.com/send?phone=${cleanPhone}&text=${encodeURIComponent(message)}`;
-    window.open(url, "_blank");
+    const textMessage = `Ol\u00e1, ${clientName} ! Passando para confirmar seu agendamento de \uD83D\uDC87\uD83C\uDFFD\u200D\u2642\uFE0F ${service} hoje \u00e0s ${time}\u231A -> \uD83D\uDC88 \uD835\uDD2D\uD835\uDD1E\uD835\uDD2F\uD835\uDD1F\uD835\uDD22\uD835\uDD1E\uD835\uDD2F\uD835\uDD26\uD835\uDD1E \uD835\uDD07\uD835\uDD2C \uD835\uDD09\uD835\uDD1E\uD835\uDD29 \uD83D\uDC88. Te aguardamos !`;
+
+    // 4. Codifica a URL de forma segura
+    const encodedMessage = encodeURIComponent(textMessage);
+    const url = `https://api.whatsapp.com/send?phone=${cleanPhone}&text=${encodedMessage}`;
+    window.open(url, '_blank');
   };
 
   const todayStr = format(new Date(), "yyyy-MM-dd");

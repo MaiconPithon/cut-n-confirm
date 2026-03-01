@@ -395,20 +395,18 @@ export default function Admin() {
 
   const openWhatsApp = (phone: string, clientName: string) => {
     if (!phone) return;
-    let cleanPhone = phone.replace(/\D/g, "");
+    // 1. Apenas limpa caracteres não numéricos. NÃO remove o 9º dígito.
+    let cleanPhone = phone.replace(/\D/g, '');
 
-    // Se o número tem 11 dígitos (DDD + 9 + 8 números), removemos o 9 para evitar o bug da API
-    if (cleanPhone.length === 11 && cleanPhone[2] === "9") {
-      cleanPhone = cleanPhone.substring(0, 2) + cleanPhone.substring(3);
+    // 2. Garante o DDI do Brasil
+    if (!cleanPhone.startsWith('55')) {
+      cleanPhone = '55' + cleanPhone;
     }
 
-    // Adiciona o 55 do Brasil se não tiver
-    if (!cleanPhone.startsWith("55")) {
-      cleanPhone = "55" + cleanPhone;
-    }
-
-    const message = encodeURIComponent(`Olá, ${clientName}! Passando para confirmar seu agendamento.`);
-    const url = `https://api.whatsapp.com/send?phone=${cleanPhone}&text=${message}`;
+    const time = appointmentTime.slice(0, 5);
+    const service = serviceName || "corte";
+    const message = `_Olá, ${clientName}! Passando para confirmar seu agendamento de 💇🏽‍♂️ ${service}_ *hoje às ${time}*⌚ -> 💈 _${businessName}_ 💈. *Te aguardamos* !`;
+    const url = `https://api.whatsapp.com/send?phone=${cleanPhone}&text=${encodeURIComponent(message)}`;
     window.open(url, "_blank");
   };
 

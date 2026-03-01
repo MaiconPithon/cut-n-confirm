@@ -393,7 +393,7 @@ export default function Admin() {
     ? appointments?.filter((a) => a.appointment_date === format(filterDate, "yyyy-MM-dd"))
     : appointments;
 
-  const openWhatsApp = (phone: string, clientName: string) => {
+  const openWhatsApp = (phone: string, clientName: string, appointmentTime: string, serviceName: string) => {
     if (!phone) return;
     // 1. Limpa espaços e traços, confiando no número exato que o cliente digitou
     let cleanPhone = phone.replace(/\D/g, '');
@@ -435,10 +435,10 @@ export default function Admin() {
             <p className="text-sm text-muted-foreground">{businessName}</p>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" onClick={() => navigate("/")} className="gap-2">
+            <Button variant="outline" onClick={() => navigate("/")} className="gap-2 border-border bg-background hover:bg-secondary hover:text-foreground hover:border-primary active:bg-secondary text-foreground transition-colors">
               <Home className="h-4 w-4" /> Página Inicial
             </Button>
-            <Button variant="outline" onClick={handleLogout} className="gap-2">
+            <Button variant="outline" onClick={handleLogout} className="gap-2 border-border bg-background hover:bg-secondary hover:text-foreground active:bg-secondary text-foreground transition-colors">
               <LogOut className="h-4 w-4" /> Sair
             </Button>
           </div>
@@ -581,7 +581,7 @@ export default function Admin() {
                                 size="icon"
                                 className="h-8 w-8 text-green-500 hover:text-green-400"
                                 title="Enviar lembrete via WhatsApp"
-                                onClick={() => openWhatsApp(a.client_phone, a.client_name)}
+                                onClick={() => openWhatsApp(a.client_phone, a.client_name, a.appointment_time, a.services?.name || "corte")}
                               >
                                 <MessageCircle className="h-4 w-4" />
                               </Button>

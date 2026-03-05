@@ -190,12 +190,8 @@ export default function Agendar() {
   const isFullDayBlocked = blockedSlots?.some((b) => b.full_day);
   const blockedTimes = new Set(blockedSlots?.filter((b) => b.blocked_time).map((b) => b.blocked_time!.slice(0, 5)) || []);
 
-  // Dynamic slot interval: use the minimum duration of selected services, or fallback to 15 min steps
-  const dynamicInterval = selectedServices.length > 0
-    ? Math.min(...selectedServices.map((s) => s.duration_minutes))
-    : 15;
-  // Use 15 min as the base grid interval for flexibility
-  const slotInterval = 15;
+  // Dynamic slot interval: use totalDuration of selected services
+  const slotInterval = totalDuration > 0 ? totalDuration : 30;
 
   const selectedDow = selectedDate ? getDay(selectedDate) : undefined;
   const dayConfig = scheduleConfig?.find((c) => c.day_of_week === selectedDow);
@@ -366,7 +362,10 @@ export default function Agendar() {
                     checked={selectedServiceIds.has(s.id)}
                     onCheckedChange={() => toggleService(s.id)}
                   />
-                  <span className="flex-1 font-medium text-foreground">{s.name}</span>
+                  <div className="flex-1">
+                    <span className="font-medium text-foreground">{s.name}</span>
+                    <span className="ml-2 text-xs text-muted-foreground">({s.duration_minutes} min)</span>
+                  </div>
                   <span className="font-semibold text-primary">R$ {Number(s.price).toFixed(2).replace(".", ",")}</span>
                 </label>
               ))}

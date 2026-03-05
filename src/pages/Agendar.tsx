@@ -501,7 +501,7 @@ export default function Agendar() {
                     >
                       {/* Time label */}
                       <div
-                        className="absolute text-xs font-mono text-muted-foreground"
+                        className="absolute text-[10px] font-mono text-muted-foreground"
                         style={{ left: "-56px", width: "48px", textAlign: "right" }}
                       >
                         {showLabel && timeStr}
@@ -521,7 +521,7 @@ export default function Agendar() {
                         disabled={isOccupied}
                         onClick={() => setSelectedTime(timeStr)}
                         className={cn(
-                          "ml-8 flex-1 rounded-md px-3 text-left text-sm transition-all h-full flex items-center gap-2",
+                          "ml-8 flex-1 rounded-md px-3 text-left text-xs transition-all h-full flex items-center gap-2",
                           isOccupied
                             ? "cursor-not-allowed"
                             : isSelected
@@ -576,7 +576,7 @@ export default function Agendar() {
                       )}
                       style={{ top: `${top}px`, height: `${height}px` }}
                     >
-                      <span className="text-[10px] text-muted-foreground font-medium truncate">
+                      <span className="text-[9px] text-muted-foreground font-medium truncate">
                         {block.label} ({toTime(block.start)} - {toTime(block.end)})
                       </span>
                     </div>
@@ -594,7 +594,7 @@ export default function Agendar() {
                       className="absolute left-8 right-0 rounded-md pointer-events-none z-20 border-2 border-[#d1b122] bg-[#d1b122]/15 flex items-start px-3 py-1"
                       style={{ top: `${top}px`, minHeight: '48px', height: `${Math.max(height, 48)}px` }}
                     >
-                      <span className="text-xs font-semibold text-[#d1b122] leading-tight">
+                      <span className="text-[10px] font-semibold text-[#d1b122] leading-tight">
                         {serviceDescription}
                         <br />
                         {toTime(startMin)} até {toTime(startMin + (totalDuration || 30))}

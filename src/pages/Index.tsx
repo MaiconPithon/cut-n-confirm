@@ -340,10 +340,10 @@ const Index = () => {
       </div>
 
       {/* Admin link + credits footer (above widget toggle) */}
-      <footer className="absolute bottom-10 z-10 w-full flex flex-col items-center">
+      <footer className="absolute bottom-28 sm:bottom-10 z-20 w-full flex flex-col items-center gap-2 px-4">
         <button
           onClick={() => navigate("/admin-login")}
-          className="text-[10px] text-muted-foreground/30 transition-colors hover:text-primary mb-1"
+          className="text-[11px] text-muted-foreground/40 transition-colors hover:text-primary py-2 px-4 relative z-30"
         >
           Área do Barbeiro
         </button>

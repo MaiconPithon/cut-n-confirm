@@ -146,7 +146,7 @@ const Index = () => {
 
   return (
     <main
-      className="relative flex min-h-[100dvh] flex-col items-center justify-center overflow-hidden"
+      className="relative flex min-h-[100dvh] flex-col items-center justify-center overflow-hidden pb-24 sm:pb-0"
       style={{
         backgroundImage: `linear-gradient(rgba(10,10,10,0.82), rgba(10,10,10,0.82)), url("${appearance?.background_image || '/images/site-bg.png'}")`,
         backgroundSize: 'cover',
@@ -340,14 +340,14 @@ const Index = () => {
       </div>
 
       {/* Admin link + credits footer (above widget toggle) */}
-      <footer className="absolute bottom-28 sm:bottom-10 z-20 w-full flex flex-col items-center gap-2 px-4">
+      <footer className="absolute bottom-32 sm:bottom-12 z-20 w-full flex flex-col items-center gap-3 px-4 pb-20 sm:pb-0">
         <button
           onClick={() => navigate("/admin-login")}
-          className="text-[11px] text-muted-foreground/40 transition-colors hover:text-primary py-2 px-4 relative z-30"
+          className="text-[11px] xs:text-[10px] text-muted-foreground/40 transition-colors hover:text-primary py-2 px-4 relative z-30 mb-1"
         >
           Área do Barbeiro
         </button>
-        <span className="text-[10px] text-muted-foreground/40 font-medium">
+        <span className="text-[10px] xs:text-[9px] text-muted-foreground/40 font-medium">
           Desenvolvido por Michael Pithon
         </span>
       </footer>

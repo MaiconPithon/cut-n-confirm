@@ -474,10 +474,10 @@ export default function Admin() {
   });
 
   const todayStr = format(new Date(), "yyyy-MM-dd");
-  const todayTotal = appointments?.filter((a) => a.appointment_date === todayStr && a.status !== "cancelado").reduce((sum, a) => sum + Number(a.price), 0) || 0;
+  const todayTotal = appointments?.filter((a) => a.appointment_date === todayStr && a.status === "finalizado").reduce((sum, a) => sum + Number(a.price), 0) || 0;
   const todayCount = appointments?.filter((a) => a.appointment_date === todayStr && a.status !== "cancelado").length || 0;
-  const monthTotal = appointments?.filter((a) => a.appointment_date.startsWith(format(new Date(), "yyyy-MM")) && a.status !== "cancelado").reduce((sum, a) => sum + Number(a.price), 0) || 0;
-  const totalGeral = appointments?.filter((a) => a.status !== "cancelado").reduce((sum, a) => sum + Number(a.price), 0) || 0;
+  const monthTotal = appointments?.filter((a) => a.appointment_date.startsWith(format(new Date(), "yyyy-MM")) && a.status === "finalizado").reduce((sum, a) => sum + Number(a.price), 0) || 0;
+  const totalGeral = appointments?.filter((a) => a.status === "finalizado").reduce((sum, a) => sum + Number(a.price), 0) || 0;
 
   if (isAdmin === null) {
     return <div className="flex min-h-screen items-center justify-center bg-background text-muted-foreground">Verificando acesso...</div>;

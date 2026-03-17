@@ -306,6 +306,12 @@ export default function Agendar() {
         }
       });
 
+    // 3. Add break_end as an available slot start (first slot after break)
+    const breakBlk = timelineBlocks.find((b) => b.type === "break");
+    if (breakBlk && breakBlk.end >= openMin && breakBlk.end < closeMin) {
+      slotTimes.add(breakBlk.end);
+    }
+
     // Sort and build final slots
     Array.from(slotTimes)
       .sort((a, b) => a - b)

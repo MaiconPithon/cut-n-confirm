@@ -156,8 +156,8 @@ export function EditAppointmentModal({ open, onOpenChange, appointment }: EditAp
                     checked={selectedServiceIds.has(s.id)}
                     onCheckedChange={() => toggleService(s.id)}
                   />
-                  <span className="flex-1 text-sm text-foreground">{s.name}</span>
-                  <span className="text-sm font-semibold text-primary">
+                  <span className="flex-1 text-sm text-white">{s.name}</span>
+                  <span className="text-sm font-semibold text-white">
                     R$ {Number(s.price).toFixed(2).replace(".", ",")}
                   </span>
                 </label>

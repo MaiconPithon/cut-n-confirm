@@ -199,10 +199,6 @@ const Index = () => {
             <Phone className="h-4 w-4 text-primary" />
             <span className="text-sm">(71) 98833-5001</span>
           </div>
-          <div className="flex items-center gap-2">
-            <MapPin className="h-4 w-4 text-primary" />
-            <span className="text-sm">Salvador – BA</span>
-          </div>
         </div>
       </div>
 

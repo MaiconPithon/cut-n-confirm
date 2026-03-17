@@ -146,7 +146,7 @@ const Index = () => {
 
   return (
     <main
-      className="relative flex min-h-[100dvh] flex-col items-center justify-center overflow-hidden pb-[160px] sm:pb-0"
+      className="relative flex min-h-[100dvh] flex-col items-center justify-center overflow-hidden pb-[120px] sm:pb-0"
       style={{
         backgroundImage: `linear-gradient(rgba(10,10,10,0.82), rgba(10,10,10,0.82)), url("${appearance?.background_image || '/images/site-bg.png'}")`,
         backgroundSize: 'cover',
@@ -189,16 +189,38 @@ const Index = () => {
           Agendar Horário
         </Button>
 
-        {/* Info row */}
-        <div className="flex flex-wrap items-center justify-center gap-6" style={{ color: appearance?.info_color ? `hsl(${appearance.info_color})` : undefined }}>
-          <div className="flex items-center gap-2">
-            <Clock className="h-4 w-4 text-primary" />
-            <span className="text-sm">Ter–Sáb · 08h às 21h</span>
+        {/* Info + footer stacked naturally */}
+        <div className="mt-2 flex flex-col items-center gap-4" style={{ color: appearance?.info_color ? `hsl(${appearance.info_color})` : undefined }}>
+          {/* Horário + Telefone */}
+          <div className="flex flex-wrap items-center justify-center gap-6">
+            <div className="flex items-center gap-2">
+              <Clock className="h-4 w-4 text-primary" />
+              <span className="text-sm">Ter–Sáb · 08h às 21h</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Phone className="h-4 w-4 text-primary" />
+              <span className="text-sm">(71) 98833-5001</span>
+            </div>
           </div>
+
+          {/* Localização */}
           <div className="flex items-center gap-2">
-            <Phone className="h-4 w-4 text-primary" />
-            <span className="text-sm">(71) 98833-5001</span>
+            <MapPin className="h-4 w-4 text-primary" />
+            <span className="text-sm text-muted-foreground/60">Salvador – BA</span>
           </div>
+
+          {/* Área do Barbeiro */}
+          <button
+            onClick={() => navigate("/admin-login")}
+            className="text-[11px] text-muted-foreground/40 transition-colors hover:text-primary py-1 px-4 z-30"
+          >
+            Área do Barbeiro
+          </button>
+
+          {/* Créditos */}
+          <span className="text-[9px] sm:text-[10px] text-muted-foreground/40 font-medium whitespace-nowrap">
+            Desenvolvido por Michael Pithon
+          </span>
         </div>
       </div>
 
@@ -335,22 +357,6 @@ const Index = () => {
         )}
       </div>
 
-      {/* Admin link + credits footer (above widget toggle) */}
-      <footer className="absolute bottom-36 sm:bottom-12 z-30 w-full flex flex-col items-center gap-3 px-4">
-        <div className="flex items-center gap-2">
-          <MapPin className="h-3.5 w-3.5 text-primary" />
-          <span className="text-[11px] text-muted-foreground/60 sm:text-xs">Salvador – BA</span>
-        </div>
-        <button
-          onClick={() => navigate("/admin-login")}
-          className="text-[11px] text-muted-foreground/40 transition-colors hover:text-primary py-2 px-4 relative z-30"
-        >
-          Área do Barbeiro
-        </button>
-        <span className="text-[9px] sm:text-[10px] text-muted-foreground/40 font-medium whitespace-nowrap">
-          Desenvolvido por Michael Pithon
-        </span>
-      </footer>
 
       {reviewsData && reviewsData.total > 0 && (
         <div className="fixed bottom-20 right-4 z-50 flex items-center gap-1.5 rounded-full border border-white/10 bg-black/60 px-3 py-1.5 backdrop-blur-md shadow-lg">

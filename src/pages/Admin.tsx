@@ -729,7 +729,7 @@ export default function Admin() {
                               onChange={(e) =>
                                 updateSchedule.mutate({ id: day.id, updates: { close_time: e.target.value } })
                               }
-                              className="w-28 border-border bg-background text-sm"
+                              className="w-28 border border-primary/40 bg-background text-sm text-white"
                             />
                           </div>
                         )}

@@ -785,7 +785,7 @@ export default function Agendar() {
               <p className="text-sm"><span className="text-muted-foreground">Serviço:</span> <strong>{serviceDescription}</strong></p>
               <p className="text-sm"><span className="text-muted-foreground">Data:</span> <strong>{selectedDate && format(selectedDate, "dd/MM/yyyy")}</strong></p>
               <p className="text-sm"><span className="text-muted-foreground">Horário:</span> <strong>{selectedTime}</strong></p>
-              <p className="text-sm"><span className="text-muted-foreground">Pagamento:</span> <strong>{paymentMethod === "pix" ? "Pix" : "Dinheiro"}</strong></p>
+              <p className="text-sm"><span className="text-muted-foreground">Pagamento:</span> <strong>Pagar no Local</strong></p>
               <div className="border-t border-border pt-2 mt-2">
                 <p className="text-sm"><span className="text-muted-foreground">Total:</span> <span className="font-bold text-[#d1b122]">R$ {totalPrice.toFixed(2).replace(".", ",")}</span></p>
               </div>

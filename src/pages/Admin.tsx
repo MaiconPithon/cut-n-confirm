@@ -1065,6 +1065,98 @@ export default function Admin() {
             )}
           </TabsContent>
 
+          {/* ─── TAB: Avaliações (Super Admin only) ─── */}
+          {isSuperAdmin && (
+            <TabsContent value="reviews">
+              <Card className="border-border bg-card">
+                <CardHeader>
+                  <div className="flex items-center justify-between flex-wrap gap-3">
+                    <CardTitle className="flex items-center gap-2 text-primary">
+                      <Star className="h-5 w-5" /> Gerenciar Avaliações
+                    </CardTitle>
+                    <div className="flex items-center gap-2">
+                      <Select value={reviewFilterNota} onValueChange={setReviewFilterNota}>
+                        <SelectTrigger className="w-40 border-border">
+                          <SelectValue placeholder="Filtrar por nota" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">Todas as notas</SelectItem>
+                          <SelectItem value="low">⭐ 1-2 estrelas</SelectItem>
+                          <SelectItem value="high">⭐ 4-5 estrelas</SelectItem>
+                          <SelectItem value="1">1 estrela</SelectItem>
+                          <SelectItem value="2">2 estrelas</SelectItem>
+                          <SelectItem value="3">3 estrelas</SelectItem>
+                          <SelectItem value="4">4 estrelas</SelectItem>
+                          <SelectItem value="5">5 estrelas</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  {!filteredReviews || filteredReviews.length === 0 ? (
+                    <p className="text-muted-foreground text-center py-8">Nenhuma avaliação encontrada.</p>
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <Table>
+                        <TableHeader>
+                          <TableRow className="border-border">
+                            <TableHead className="text-primary">Cliente</TableHead>
+                            <TableHead className="text-primary">Data</TableHead>
+                            <TableHead className="text-primary">Nota</TableHead>
+                            <TableHead className="text-primary">Status</TableHead>
+                            <TableHead className="text-primary w-24">Ação</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {filteredReviews.map((r: any) => (
+                            <TableRow key={r.id} className={cn("border-border", r.hidden && "opacity-40")}>
+                              <TableCell className="text-foreground font-medium">{r.nome_cliente}</TableCell>
+                              <TableCell className="text-foreground">{format(new Date(r.created_at), "dd/MM/yyyy HH:mm")}</TableCell>
+                              <TableCell>
+                                <div className="flex items-center gap-1">
+                                  {Array.from({ length: 5 }).map((_, i) => (
+                                    <Star
+                                      key={i}
+                                      className={cn(
+                                        "h-4 w-4",
+                                        i < r.estrelas ? "fill-yellow-500 text-yellow-500" : "text-muted-foreground/30"
+                                      )}
+                                    />
+                                  ))}
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <Badge className={r.hidden ? "bg-red-600/20 text-red-400 border-red-600/30" : "bg-green-600/20 text-green-400 border-green-600/30"}>
+                                  {r.hidden ? "Oculta" : "Visível"}
+                                </Badge>
+                              </TableCell>
+                              <TableCell>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className={cn("gap-1", r.hidden ? "text-green-400 hover:text-green-300" : "text-red-400 hover:text-red-300")}
+                                  onClick={() => toggleHideReview.mutate({ id: r.id, hidden: !r.hidden })}
+                                  disabled={toggleHideReview.isPending}
+                                >
+                                  {r.hidden ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+                                  {r.hidden ? "Mostrar" : "Ocultar"}
+                                </Button>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  )}
+                  <p className="mt-4 text-xs text-muted-foreground">
+                    Avaliações ocultas não contam na média pública exibida no site.
+                  </p>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          )}
+
           {/* ─── TAB: Team (Super Admin only) ─── */}
           <TabsContent value="team">
             {!isSuperAdmin ? (

@@ -464,7 +464,7 @@ export default function Admin() {
     queryKey: ["admin-avaliacoes"],
     enabled: isAdmin === true,
     queryFn: async () => {
-      const { data, error } = await supabase.from("avaliacoes").select("estrelas");
+      const { data, error } = await supabase.from("avaliacoes").select("estrelas, hidden").eq("hidden", false);
       if (error) { console.error(error); return { average: 0, total: 0 }; }
       if (!data || data.length === 0) return { average: 0, total: 0 };
       const total = data.length;

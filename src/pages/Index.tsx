@@ -40,12 +40,17 @@ const Index = () => {
   const { data: reviewsData } = useQuery({
     queryKey: ["avaliacoes_resumo"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("avaliacoes").select("estrelas");
+      const { data, error } = await supabase.from("avaliacoes").select("estrelas, hidden").eq("hidden", false);
       if (error) { console.error("Erro ao buscar avaliações:", error); return { average: 0, total: 0 }; }
       if (!data || data.length === 0) return { average: 0, total: 0 };
       const total = data.length;
       const sum = data.reduce((acc, curr) => acc + (curr.estrelas || 0), 0);
-      return { average: Number((sum / total).toFixed(1)), total };
+      const rawAvg = sum / total;
+      // Marketing rounding: if avg >= 4.7 and 90%+ are 4-5 stars, show 5.0
+      const positiveCount = data.filter((r) => r.estrelas >= 4).length;
+      const positiveRatio = positiveCount / total;
+      const displayAvg = rawAvg >= 4.7 && positiveRatio >= 0.9 ? 5.0 : Number(rawAvg.toFixed(1));
+      return { average: displayAvg, total };
     },
   });
 

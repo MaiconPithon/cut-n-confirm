@@ -56,6 +56,7 @@ export default function Admin() {
   const [serviceModalOpen, setServiceModalOpen] = useState(false);
   const [editingService, setEditingService] = useState<any>(null);
   const [serviceForm, setServiceForm] = useState({ name: "", price: "", duration_minutes: "30", buffer_minutes: "0" });
+  const [reviewFilterNota, setReviewFilterNota] = useState<string>("all");
   const { businessName } = useBusinessName();
   const appearanceSettings = useAppearance();
 

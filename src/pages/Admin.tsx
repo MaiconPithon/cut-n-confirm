@@ -15,7 +15,7 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { LogOut, Calendar as CalendarIcon, DollarSign, UserPlus, Home, Settings, Clock, Ban, Trash2, KeyRound, X, Shield, MessageCircle, Pencil, Palette, Star, Zap, Plus } from "lucide-react";
+import { LogOut, Calendar as CalendarIcon, DollarSign, UserPlus, Home, Settings, Clock, Ban, Trash2, KeyRound, X, Shield, MessageCircle, Pencil, Palette, Star, Zap, Plus, EyeOff, Eye } from "lucide-react";
 import { EditAppointmentModal } from "@/components/EditAppointmentModal";
 import { AppearanceTab } from "@/components/AppearanceTab";
 import { QuickSale } from "@/components/QuickSale";

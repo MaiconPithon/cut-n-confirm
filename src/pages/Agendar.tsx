@@ -6,7 +6,6 @@ import { Input } from "@/components/ui/input";
 import { Calendar } from "@/components/ui/calendar";
 import { Checkbox } from "@/components/ui/checkbox";
 import { WhatsAppButton } from "@/components/WhatsAppButton";
-import { PixPayment } from "@/components/PixPayment";
 import { ArrowLeft, ChevronRight, Check, MessageCircle, Star, Clock, AlertTriangle, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";

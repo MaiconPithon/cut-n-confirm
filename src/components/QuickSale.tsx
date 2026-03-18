@@ -96,6 +96,21 @@ export function QuickSale() {
     try {
       const dateStr = format(selectedDate, "yyyy-MM-dd");
       const timeStr = `${selectedHour}:${selectedMinute}`;
+
+      // Check for duplicate appointment
+      const { data: existing, error: checkError } = await supabase
+        .from("appointments")
+        .select("id")
+        .eq("appointment_date", dateStr)
+        .eq("appointment_time", timeStr)
+        .in("status", ["pendente", "confirmado"]);
+      if (checkError) throw checkError;
+      if (existing && existing.length > 0) {
+        toast.error("Este horário já está ocupado. Por favor, escolha outro minuto para o encaixe.");
+        setSubmitting(false);
+        return;
+      }
+      const timeStr = `${selectedHour}:${selectedMinute}`;
       const description = cart.map((c) => c.name).join(" + ");
       const serviceId = cart.find((c) => c.serviceId)?.serviceId || services?.[0]?.id;
 

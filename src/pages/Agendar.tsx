@@ -365,8 +365,7 @@ export default function Agendar() {
       toast.success("Agendamento realizado com sucesso!");
       const dateStr = selectedDate ? format(selectedDate, "dd/MM/yyyy") : "";
       const valor = `R$ ${totalPrice.toFixed(2).replace(".", ",")}`;
-      const pixReminder = paymentMethod === "pix" ? "\n\n⚠️ Lembre-se de enviar o comprovante do Pix para garantir sua vaga!" : "";
-      const barberMsg = `🔔 *Novo Agendamento!*\n\n👤 Cliente: ${clientName}\n📱 Tel: ${clientPhone}\n✂️ Serviço: ${serviceDescription}\n📅 Data: ${dateStr} às ${selectedTime}\n💰 Valor: ${valor}\n💳 Pagamento: ${paymentMethod === "pix" ? "Pix" : "Dinheiro"}${pixReminder}`;
+      const barberMsg = `🔔 *Novo Agendamento!*\n\n👤 Cliente: ${clientName}\n📱 Tel: ${clientPhone}\n✂️ Serviço: ${serviceDescription}\n📅 Data: ${dateStr} às ${selectedTime}\n💰 Valor: ${valor}\n💳 Pagamento: Pagar no Local`;
       window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(barberMsg)}`, "_blank");
     },
     onError: (err: any) => {

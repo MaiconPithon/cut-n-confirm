@@ -474,6 +474,40 @@ export default function Admin() {
     },
   });
 
+  // Full reviews list for super admin management
+  const { data: allReviews } = useQuery({
+    queryKey: ["admin-all-reviews"],
+    enabled: isSuperAdmin,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("avaliacoes")
+        .select("*")
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
+  const toggleHideReview = useMutation({
+    mutationFn: async ({ id, hidden }: { id: string; hidden: boolean }) => {
+      const { error } = await supabase.from("avaliacoes").update({ hidden } as any).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-all-reviews"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-avaliacoes"] });
+      queryClient.invalidateQueries({ queryKey: ["avaliacoes_resumo"] });
+      toast.success("Avaliação atualizada!");
+    },
+  });
+
+  const filteredReviews = allReviews?.filter((r: any) => {
+    if (reviewFilterNota === "all") return true;
+    if (reviewFilterNota === "low") return r.estrelas <= 2;
+    if (reviewFilterNota === "high") return r.estrelas >= 4;
+    return r.estrelas === Number(reviewFilterNota);
+  });
+
   const todayStr = format(new Date(), "yyyy-MM-dd");
   const todayTotal = appointments?.filter((a) => a.appointment_date === todayStr && a.status === "finalizado").reduce((sum, a) => sum + Number(a.price), 0) || 0;
   const todayCount = appointments?.filter((a) => a.appointment_date === todayStr && a.status !== "cancelado").length || 0;
